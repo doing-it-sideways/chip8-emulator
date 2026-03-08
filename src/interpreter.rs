@@ -21,16 +21,18 @@ impl From<u16> for Address {
 struct Registers {
     v: [u8; 0x10], // 16 general purpose register V0-VF, VF often modified by instructions as a flag register
     i: Address, // program counter
+    sp: Address,
 }
 
 // 60 t/s
 struct Chip8 {
     pixels: [u64; 0x20], // 64x32 on/off values
     reg: Registers,
+    input: u16, // bitwise 16 buttons
 
     timer_delay: u8,
     timer_sound: u8,
-    
+    // TODO: ram, stack
 }
 
 pub fn run(rom_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
