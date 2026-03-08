@@ -6,6 +6,9 @@ mod error;
 mod instrs;
 mod font;
 
+mod graphics;
+mod input;
+
 #[derive(PartialEq, PartialOrd)]
 struct Address(u16);
 
@@ -20,12 +23,14 @@ struct Registers {
     i: Address, // program counter
 }
 
+// 60 t/s
 struct Chip8 {
     pixels: [u64; 0x20], // 64x32 on/off values
     reg: Registers,
-    
+
     timer_delay: u8,
     timer_sound: u8,
+    
 }
 
 pub fn run(rom_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
