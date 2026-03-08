@@ -21,8 +21,11 @@ struct Registers {
 }
 
 struct Chip8 {
+    pixels: [u64; 0x20], // 64x32 on/off values
     reg: Registers,
-    pixels: [u64; 0x20] // 64x32 on/off values
+    
+    timer_delay: u8,
+    timer_sound: u8,
 }
 
 pub fn run(rom_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
