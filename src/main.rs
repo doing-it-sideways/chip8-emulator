@@ -7,7 +7,9 @@ use std::{
 
 use clap::Parser;
 
-pub mod interpreter;
+mod interpreter;
+mod graphics;
+mod input;
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
