@@ -3,3 +3,4 @@
 /tests
 /roms
 Cargo.lock
+/bitset/target
