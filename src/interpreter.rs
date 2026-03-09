@@ -82,5 +82,9 @@ impl Chip8 {
 pub fn run(rom_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
     let mut chip8 = Chip8::new();
 
+    'run: loop {
+        break 'run; // TODO
+    }
+
     Ok(())
 }
