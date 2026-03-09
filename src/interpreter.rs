@@ -18,7 +18,7 @@ impl From<u16> for Address {
     }
 }
 
-const ADDR_INIT: Address = Address(0x200);
+const PC_INIT: Address = Address(0x200);
 
 #[derive(Default, Debug)]
 struct Registers {
@@ -27,9 +27,8 @@ struct Registers {
     sp: Address,
 }
 
-const STACK_DEFAULT_SIZE: u16 = 0x100;
-
 const RAM_DEFAULT_SIZE: u16 = 0x1000;
+const STACK_DEFAULT_SIZE: u16 = 0x100;
 
 #[derive(Default, Debug)]
 // 60 t/s
@@ -52,6 +51,10 @@ impl Chip8 {
     fn new() -> Self {
         let mut chip8 = Chip8 {
             ram: vec![0; RAM_DEFAULT_SIZE.into()],
+            reg: Registers {
+                i: PC_INIT,
+                ..Registers::default()
+            },
             ..Chip8::default()
         };
 
