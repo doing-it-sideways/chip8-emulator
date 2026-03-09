@@ -18,6 +18,8 @@ impl From<u16> for Address {
     }
 }
 
+const ADDR_INIT: Address = Address(0x200);
+
 struct Registers {
     v: [u8; 0x10], // 16 general purpose register V0-VF, VF often modified by instructions as a flag register
     i: Address, // program counter
@@ -33,6 +35,20 @@ struct Chip8 {
     timer_delay: u8,
     timer_sound: u8,
     // TODO: ram, stack
+}
+
+impl Chip8 {
+    fn new() -> Self {
+        todo!()
+    }
+
+    fn push(&mut self) {
+        todo!()
+    }
+
+    fn pop(&mut self) {
+        todo!()
+    }
 }
 
 pub fn run(rom_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
