@@ -1,4 +1,8 @@
-use super::{ Chip8, Address, font };
+use super::{ 
+    Chip8,
+    Address,
+    error::InterpreterErr
+};
 
 pub struct OpCode(u16);
 
@@ -56,7 +60,7 @@ pub enum Instruction {
     ld_regs_pc,         // FX65
 }
 
-pub fn fetch(instr: OpCode) -> Instruction {
+pub fn fetch(instr: OpCode) -> Result<Instruction, InterpreterErr> {
     todo!()
 }
 
