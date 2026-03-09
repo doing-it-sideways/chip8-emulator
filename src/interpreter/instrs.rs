@@ -16,6 +16,16 @@ impl OpCode {
     pub fn y(&self) -> u8 {
         ((self.0 & 0x00F0) >> 4) as u8
     }
+
+    pub fn nn(&self) -> u8 {
+        (self.0 & 0x00FF) as u8
+    }
+}
+
+impl Into<Address> for OpCode {
+    fn into(self) -> Address {
+        Address::from(self.0)
+    }
 }
 
 // yes this is slightly inefficient, but makes intent clearer and match statements prettier,
@@ -60,10 +70,23 @@ pub enum Instruction {
     ld_regs_pc,         // FX65
 }
 
-pub fn fetch(instr: OpCode) -> Result<Instruction, InterpreterErr> {
-    todo!()
+pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
+    use Instruction::*;
+    let op_code = OpCode(instr);
+
+    match instr {
+        0x0000 => Ok(nop),
+        0x00E0 => Ok(ClearScreen),
+        0x00EE => Ok(ret),
+        (0x1000..0x2000) => Ok(jmp(op_code.into())),
+        (0x2000..0x3000) => Ok(call(op_code.into())),
+        (0x3000..0x4000) => Ok(SkipEqNum(op_code.nn())),
+        (0x4000..0x5000) => Ok(SkipNotEqNum(op_code.nn())),
+        _ => Err(InterpreterErr::InvalidInstr)
+    }
 }
 
 pub fn exec(state: &mut Chip8, instr: Instruction) {
+    use Instruction::*;
     todo!()
 }
