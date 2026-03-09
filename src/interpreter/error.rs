@@ -2,7 +2,9 @@ use std::error::Error;
 
 #[derive(Debug)]
 pub enum InterpreterErr {
-
+    StackErr,
+    MemErr,
+    InvalidInstr
 }
 
 impl std::fmt::Display for InterpreterErr {
