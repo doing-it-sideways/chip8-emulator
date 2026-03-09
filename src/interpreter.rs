@@ -59,6 +59,8 @@ impl Chip8 {
         };
 
         chip8.stack.reserve(STACK_DEFAULT_SIZE.into());
+
+        chip8.ram[..font::FONT_BYTES].copy_from_slice(&font::get_bytes());
         
         chip8
     }
