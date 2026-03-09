@@ -31,6 +31,7 @@ impl Into<Address> for OpCode {
 // yes this is slightly inefficient, but makes intent clearer and match statements prettier,
 // splitting code from fetch and exec
 #[allow(non_camel_case_types)]
+#[derive(PartialEq)]
 pub enum Instruction {
     nop,                // 0x0000
     call_mchn(Address), // 0NNN what is this instruction?????
@@ -74,16 +75,19 @@ pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
     use Instruction::*;
     let op_code = OpCode(instr);
 
-    match instr {
-        0x0000 => Ok(nop),
-        0x00E0 => Ok(ClearScreen),
-        0x00EE => Ok(ret),
-        (0x1000..0x2000) => Ok(jmp(op_code.into())),
-        (0x2000..0x3000) => Ok(call(op_code.into())),
-        (0x3000..0x4000) => Ok(SkipEqNum(op_code.nn())),
-        (0x4000..0x5000) => Ok(SkipNotEqNum(op_code.nn())),
-        _ => Err(InterpreterErr::InvalidInstr)
-    }
+    let instr = match instr {
+        0x0000 => nop,
+        0x00E0 => ClearScreen,
+        0x00EE => ret,
+        (0x1000..0x2000) => jmp(op_code.into()),
+        (0x2000..0x3000) => call(op_code.into()),
+        (0x3000..0x4000) => SkipEqNum(op_code.nn()),
+        (0x4000..0x5000) => SkipNotEqNum(op_code.nn()),
+        (0x5000..=0x5FF0) => SkipNotEqReg,
+        _ => return Err(InterpreterErr::InvalidInstr),
+    };
+
+    Ok(instr)
 }
 
 pub fn exec(state: &mut Chip8, instr: Instruction) {
