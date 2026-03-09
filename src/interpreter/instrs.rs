@@ -83,7 +83,11 @@ pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
         (0x2000..0x3000) => call(op_code.into()),
         (0x3000..0x4000) => SkipEqNum(op_code.nn()),
         (0x4000..0x5000) => SkipNotEqNum(op_code.nn()),
-        (0x5000..=0x5FF0) => SkipNotEqReg,
+        (0x6000..0x7000) => ld_nn(op_code.nn()),
+        (0x7000..0x8000) => add_nn(op_code.nn()),
+        (0xA000..0xB000) => todo!(),
+        (0xB000..0xC000) => todo!(),
+        (0xD000..0xE000) => todo!(),
         _ => return Err(InterpreterErr::InvalidInstr),
     };
 
