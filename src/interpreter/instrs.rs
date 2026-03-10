@@ -4,6 +4,7 @@ use super::{
     error::InterpreterErr
 };
 
+#[derive(Debug, Copy, Clone)]
 pub struct OpCode(u16);
 
 type Reg = u8;
@@ -48,8 +49,12 @@ impl Into<(u8, u8, u8, u8)> for OpCode {
 
 // yes this is slightly inefficient, but makes intent clearer and match statements prettier,
 // splitting code from fetch and exec
+/// List of instructions the Chip-8 interpreter can process.
+/// Lowercase names are what I find to be similar to other instructions in either assembly or
+/// similar to instructions I noticed on the Game Boy SOC.
+/// Uppercase names denote instructions that seem more Chip-8 specific in my view.
 #[allow(non_camel_case_types)]
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Instruction {
     nop,                    // 0x0000
     call_mchn(Address),     // 0NNN what is this instruction?????
@@ -86,21 +91,17 @@ pub enum Instruction {
     LoadSpritePC(Reg),      // FX29
     ld_pc_bcd(Reg),         // FX33
     ld_pc_regs(Reg),        // FX55
-    ld_regs_pc(Reg),        // FX65
+    ld_regs_pc(Reg)         // FX65
 }
 
 pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
     use Instruction::*;
     let op_code = OpCode(instr);
 
-    let instr = match op_code.lead_nibble() {
-        0 => {
-            nop
-        },
-        1 => jmp(op_code.into()),
-        2 => call(op_code.into()),
-        3 => SkipEqNum(op_code.x(), op_code.nn()),
-        4 => SkipNotEqNum(op_code.x(), op_code.nn()),
+    let instr = match op_code.into() {
+        (0, x, y, z) => match (x, y, z) {
+            _ => call_mchn(op_code.into()),
+        }
         _ => return Err(InterpreterErr::InvalidInstr),
     };
 
