@@ -9,23 +9,27 @@ pub struct OpCode(u16);
 type Reg = u8;
 
 impl OpCode {
-    /// Provides shorthand to get the VX register from an instruction.
-    pub fn x(&self) -> Reg {
-        ((self.0 & 0x0F00) >> 8) as u8
+    fn lead_nibble(&self) -> u8 {
+        ((self.0 & 0xF000) >> 12) as u8
     }
 
-    /// Provides shorthand to get the VY register from an instruction.
-    pub fn y(&self) -> Reg {
-        ((self.0 & 0x00F0) >> 4) as u8
+    /// Provides shorthand to get the VX register from some instructions.
+    fn x(&self) -> Reg {
+        ((self.0 & 0x0F00) >> 8) as Reg
+    }
+
+    /// Provides shorthand to get the VY register from some instructions.
+    fn y(&self) -> Reg {
+        ((self.0 & 0x00F0) >> 4) as Reg
     }
 
     /// Provides shorthand to get the byte value at the end of some instructions.
-    pub fn nn(&self) -> u8 {
+    fn nn(&self) -> u8 {
         (self.0 & 0x00FF) as u8
     }
 
     /// Provides shorthand to get the nibble value at the end of some instructions.
-    pub fn n(&self) -> u8 {
+    fn n(&self) -> u8 {
         (self.0 & 0x000F) as u8
     }
 }
@@ -33,6 +37,12 @@ impl OpCode {
 impl Into<Address> for OpCode {
     fn into(self) -> Address {
         Address::from(self.0)
+    }
+}
+
+impl Into<(u8, u8, u8, u8)> for OpCode {
+    fn into(self) -> (u8, u8, u8, u8) {
+        (self.lead_nibble(), self.x(), self.y(), self.n())
     }
 }
 
@@ -83,8 +93,14 @@ pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
     use Instruction::*;
     let op_code = OpCode(instr);
 
-    let instr = match instr {
-        
+    let instr = match op_code.lead_nibble() {
+        0 => {
+            nop
+        },
+        1 => jmp(op_code.into()),
+        2 => call(op_code.into()),
+        3 => SkipEqNum(op_code.x(), op_code.nn()),
+        4 => SkipNotEqNum(op_code.x(), op_code.nn()),
         _ => return Err(InterpreterErr::InvalidInstr),
     };
 
