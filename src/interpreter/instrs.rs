@@ -6,19 +6,27 @@ use super::{
 
 pub struct OpCode(u16);
 
+type Reg = u8;
+
 impl OpCode {
     /// Provides shorthand to get the VX register from an instruction.
-    pub fn x(&self) -> u8 {
+    pub fn x(&self) -> Reg {
         ((self.0 & 0x0F00) >> 8) as u8
     }
 
     /// Provides shorthand to get the VY register from an instruction.
-    pub fn y(&self) -> u8 {
+    pub fn y(&self) -> Reg {
         ((self.0 & 0x00F0) >> 4) as u8
     }
 
+    /// Provides shorthand to get the byte value at the end of some instructions.
     pub fn nn(&self) -> u8 {
         (self.0 & 0x00FF) as u8
+    }
+
+    /// Provides shorthand to get the nibble value at the end of some instructions.
+    pub fn n(&self) -> u8 {
+        (self.0 & 0x000F) as u8
     }
 }
 
@@ -33,42 +41,42 @@ impl Into<Address> for OpCode {
 #[allow(non_camel_case_types)]
 #[derive(PartialEq)]
 pub enum Instruction {
-    nop,                // 0x0000
-    call_mchn(Address), // 0NNN what is this instruction?????
-    ClearScreen,        // 0x00E0
-    ret,                // 0x00EE
-    jmp(Address),       // 1NNN
-    call(Address),      // 2NNN
-    SkipEqNum(u8),      // 3XNN
-    SkipNotEqNum(u8),   // 4XNN
-    SkipEqReg,          // 5XY0
-    ld_nn(u8),          // 6XNN
-    add_nn(u8),         // 7XNN
-    ld_reg,             // 8XY0
-    or,                 // 8XY1
-    and,                // 8XY2
-    xor,                // 8XY3
-    add_reg,            // 8XY4
-    sub_reg,            // 8XY5
-    lsr,                // 8XY6
-    sub_reg_rev,        // 8XY7
-    lsl,                // 8XYE
-    SkipNotEqReg,       // 9XY0
-    ld_pc(Address),     // ANNN
-    jr(Address),        // BNNN
-    GenRandom(u8),      // CXNN
-    Draw(u8),           // DXYN
-    SkipKeyPressed,     // EX9E
-    SkipKeyNotPressed,  // EXA1
-    ld_reg_delay,       // FX07
-    wait_key,           // FX0A
-    ld_delay_reg,       // FX15
-    ld_sound_reg,       // FX18
-    add_pc,             // FX1E
-    LoadSpritePC,       // FX29
-    ld_pc_bcd,          // FX33
-    ld_pc_regs,         // FX55
-    ld_regs_pc,         // FX65
+    nop,                    // 0x0000
+    call_mchn(Address),     // 0NNN what is this instruction?????
+    ClearScreen,            // 0x00E0
+    ret,                    // 0x00EE
+    jmp(Address),           // 1NNN
+    call(Address),          // 2NNN
+    SkipEqNum(Reg, u8),     // 3XNN
+    SkipNotEqNum(Reg, u8),  // 4XNN
+    SkipEqReg(Reg, Reg),    // 5XY0
+    ld_nn(Reg, Reg),        // 6XNN
+    add_nn(Reg, Reg),       // 7XNN
+    ld_reg(Reg, Reg),       // 8XY0
+    or(Reg, Reg),           // 8XY1
+    and(Reg, Reg),          // 8XY2
+    xor(Reg, Reg),          // 8XY3
+    add_reg(Reg, Reg),      // 8XY4
+    sub_reg(Reg, Reg),      // 8XY5
+    lsr(Reg, Reg),          // 8XY6
+    sub_reg_rev(Reg, Reg),  // 8XY7
+    lsl(Reg, Reg),          // 8XYE
+    SkipNotEqReg(Reg, Reg), // 9XY0
+    ld_pc(Address),         // ANNN
+    jr(Address),            // BNNN
+    GenRandom(Reg, u8),     // CXNN
+    Draw(Reg, Reg, u8),     // DXYN
+    SkipKeyPressed(Reg),    // EX9E
+    SkipKeyNotPressed(Reg), // EXA1
+    ld_reg_delay(Reg),      // FX07
+    wait_key(Reg),          // FX0A
+    ld_delay_reg(Reg),      // FX15
+    ld_sound_reg(Reg),      // FX18
+    add_pc(Reg),            // FX1E
+    LoadSpritePC(Reg),      // FX29
+    ld_pc_bcd(Reg),         // FX33
+    ld_pc_regs(Reg),        // FX55
+    ld_regs_pc(Reg),        // FX65
 }
 
 pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
@@ -76,18 +84,7 @@ pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
     let op_code = OpCode(instr);
 
     let instr = match instr {
-        0x0000 => nop,
-        0x00E0 => ClearScreen,
-        0x00EE => ret,
-        (0x1000..0x2000) => jmp(op_code.into()),
-        (0x2000..0x3000) => call(op_code.into()),
-        (0x3000..0x4000) => SkipEqNum(op_code.nn()),
-        (0x4000..0x5000) => SkipNotEqNum(op_code.nn()),
-        (0x6000..0x7000) => ld_nn(op_code.nn()),
-        (0x7000..0x8000) => add_nn(op_code.nn()),
-        (0xA000..0xB000) => todo!(),
-        (0xB000..0xC000) => todo!(),
-        (0xD000..0xE000) => todo!(),
+        
         _ => return Err(InterpreterErr::InvalidInstr),
     };
 
