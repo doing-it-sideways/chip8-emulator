@@ -84,7 +84,7 @@ pub enum Instruction {
     SkipKeyPressed(Reg),    // EX9E
     SkipKeyNotPressed(Reg), // EXA1
     ld_reg_delay(Reg),      // FX07
-    wait_key(Reg),          // FX0A
+    WaitKey(Reg),          // FX0A
     ld_delay_reg(Reg),      // FX15
     ld_sound_reg(Reg),      // FX18
     add_pc(Reg),            // FX1E
@@ -98,11 +98,50 @@ pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
     use Instruction::*;
     let op_code = OpCode(instr);
 
+    // todo: cleanup later?
     let instr = match op_code.into() {
         (0, x, y, z) => match (x, y, z) {
             (0, 0xE, 0) => ClearScreen,
             (0, 0xE, 0xE) => ret,
             _ => call_mchn(op_code.into()),
+        },
+        (1, _, _, _) => jmp(op_code.into()),
+        (2, _, _, _) => call(op_code.into()),
+        (3, x, _, _) => SkipEqNum(x, op_code.nn()),
+        (4, x, _, _) => SkipNotEqNum(x, op_code.nn()),
+        (5, x, y, 0) => SkipEqReg(x, y),
+        (6, x, _, _) => ld_nn(x, op_code.nn()),
+        (7, x, _, _) => add_nn(x, op_code.nn()),
+        (8, x, y, instr) => match instr {
+            0 => ld_reg(x, y),
+            1 => or(x, y),
+            2 => and(x, y),
+            3 => xor(x, y),
+            4 => add_reg(x, y),
+            5 => sub_reg(x, y),
+            6 => lsr(x, y),
+            7 => sub_reg_rev(x, y),
+            0xE => lsl(x, y),
+            _ => return Err(InterpreterErr::InvalidInstr),
+        },
+        (9, x, y, 0) => SkipNotEqReg(x, y),
+        (0xA, _, _, _) => ld_pc(op_code.into()),
+        (0xB, _, _, _) => jr(op_code.into()),
+        (0xC, x, _, _) => GenRandom(x, op_code.nn()),
+        (0xD, x, y, n) => Draw(x, y, n),
+        (0xE, x, 9, 0xE) => SkipKeyPressed(x),
+        (0xE, x, 0xA, 1) => SkipKeyNotPressed(x),
+        (0xF, x, _, _) => match op_code.nn() {
+            0x07 => ld_reg_delay(x),
+            0x0A => WaitKey(x),
+            0x15 => ld_delay_reg(x),
+            0x18 => ld_sound_reg(x),
+            0x1E => add_pc(x),
+            0x29 => LoadSpritePC(x),
+            0x33 => ld_pc_bcd(x),
+            0x55 => ld_pc_regs(x),
+            0x65 => ld_regs_pc(x),
+            _ => return Err(InterpreterErr::InvalidInstr),
         },
         _ => return Err(InterpreterErr::InvalidInstr),
     };
