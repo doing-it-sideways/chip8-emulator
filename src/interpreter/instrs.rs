@@ -100,8 +100,10 @@ pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
 
     let instr = match op_code.into() {
         (0, x, y, z) => match (x, y, z) {
+            (0, 0xE, 0) => ClearScreen,
+            (0, 0xE, 0xE) => ret,
             _ => call_mchn(op_code.into()),
-        }
+        },
         _ => return Err(InterpreterErr::InvalidInstr),
     };
 
