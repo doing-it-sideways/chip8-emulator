@@ -151,5 +151,43 @@ pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
 
 pub fn exec(state: &mut Chip8, instr: Instruction) {
     use Instruction::*;
-    todo!()
+    
+    match instr {
+        nop => (),
+        call_mchn(addr) => todo!(),
+        ClearScreen => todo!(),
+        ret => todo!(),
+        jmp(addr) => todo!(),
+        call(addr) => todo!(),
+        SkipEqNum(reg, num) => todo!(),
+        SkipNotEqNum(reg, num) => todo!(),
+        SkipEqReg(x, y) => todo!(),
+        ld_nn(x, y) => todo!(),
+        add_nn(x, y) => todo!(),
+        ld_reg(x, y) => todo!(),
+        or(x, y) => todo!(),
+        and(x, y) => todo!(),
+        xor(x, y) => todo!(),
+        add_reg(x, y) => todo!(),
+        sub_reg(x, y) => todo!(),
+        lsr(x, y) => todo!(),
+        sub_reg_rev(x, y) => todo!(),
+        lsl(x, y) => todo!(),
+        SkipNotEqReg(x, y) => todo!(),
+        ld_pc(addr) => todo!(),
+        jr(addr) => todo!(),
+        GenRandom(reg, num) => todo!(),
+        Draw(x, y, num) => todo!(),
+        SkipKeyPressed(reg) => todo!(),
+        SkipKeyNotPressed(reg) => todo!(),
+        ld_reg_delay(reg) => todo!(),
+        WaitKey(reg) => todo!(),
+        ld_delay_reg(reg) => todo!(),
+        ld_sound_reg(reg) => todo!(),
+        add_pc(reg) => todo!(),
+        LoadSpritePC(reg) => todo!(),
+        ld_pc_bcd(reg) => todo!(),
+        ld_pc_regs(reg) => todo!(),
+        ld_regs_pc(reg) => todo!(),
+    }
 }
