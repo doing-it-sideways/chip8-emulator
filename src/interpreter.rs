@@ -18,7 +18,8 @@ impl From<u16> for Address {
     }
 }
 
-const PC_INIT: Address = Address(0x200);
+const ROM_START: usize = 0x200;
+const PC_INIT: Address = Address(ROM_START as u16);
 
 #[derive(Default, Debug)]
 struct Registers {
@@ -27,8 +28,8 @@ struct Registers {
     sp: Address,
 }
 
-const RAM_DEFAULT_SIZE: u16 = 0x1000;
-const STACK_DEFAULT_SIZE: u16 = 0x100;
+const RAM_DEFAULT_SIZE: usize = 0x1000;
+const STACK_DEFAULT_SIZE: usize = 0x100;
 
 #[derive(Default, Debug)]
 // 60 t/s
@@ -48,7 +49,9 @@ struct Chip8 {
 }
 
 impl Chip8 {
-    fn new() -> Self {
+    fn new(rom_data: Vec<u8>) -> Self {
+        assert!(rom_data.len() <= RAM_DEFAULT_SIZE - ROM_START);
+
         let mut chip8 = Chip8 {
             ram: vec![0; RAM_DEFAULT_SIZE.into()],
             reg: Registers {
@@ -61,6 +64,7 @@ impl Chip8 {
         chip8.stack.reserve(STACK_DEFAULT_SIZE.into());
 
         chip8.ram[..font::FONT_BYTES].copy_from_slice(&font::get_bytes());
+        chip8.ram[ROM_START..ROM_START + rom_data.len()].copy_from_slice(&rom_data);
         
         chip8
     }
@@ -80,7 +84,7 @@ impl Chip8 {
 }
 
 pub fn run(rom_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
-    let mut chip8 = Chip8::new();
+    let mut chip8 = Chip8::new(rom_data);
 
     'run: loop {
         break 'run; // TODO
