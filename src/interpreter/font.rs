@@ -1,6 +1,6 @@
 pub const FONT_BYTES: usize = 5 * 16;
 
-pub fn get_bytes() -> [u8; 5 * 16] {
+pub fn get_bytes() -> [u8; FONT_BYTES] {
     [
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
         0x20, 0x60, 0x20, 0x20, 0x70, // 1
