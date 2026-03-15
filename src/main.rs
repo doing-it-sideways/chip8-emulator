@@ -16,7 +16,7 @@ struct Args {
     rom_path: PathBuf,
 
     /// Scale of the display window. (1 = 64x32)
-    #[arg(short, long, value_parser = clap::value_parser!(u8).range(1..), default_value_t = 1)]
+    #[arg(short, long, value_parser = clap::value_parser!(u8).range(1..), default_value_t = 10)]
     scale: u8,
 }
 
