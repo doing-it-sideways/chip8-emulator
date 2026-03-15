@@ -58,7 +58,7 @@ impl Into<(u8, u8, u8, u8)> for OpCode {
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
     nop,                    // 0x0000
-    call_mchn(Address),     // 0NNN what is this instruction?????
+    call_mchn(Address),     // 0NNN
     ClearScreen,            // 0x00E0
     ret,                    // 0x00EE
     jmp(Address),           // 1NNN
@@ -95,13 +95,14 @@ pub enum Instruction {
     ld_regs_pc(Reg)         // FX65
 }
 
-pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
+pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
     use Instruction::*;
     let op_code = OpCode(instr);
 
     // todo: cleanup later?
     let instr = match op_code.into() {
         (0, x, y, z) => match (x, y, z) {
+            (0, 0, 0) => nop,
             (0, 0xE, 0) => ClearScreen,
             (0, 0xE, 0xE) => ret,
             _ => call_mchn(op_code.into()),
@@ -155,7 +156,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
     
     match instr {
         nop => (),
-        call_mchn(addr) => todo!(),
+        call_mchn(_) => (), // only used on real hardware
         ClearScreen => todo!(),
         ret => todo!(),
         jmp(addr) => todo!(),

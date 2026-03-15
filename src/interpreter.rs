@@ -59,14 +59,13 @@ struct Chip8 {
 pub fn run(rom_data: Vec<u8>) -> Result<(), InterpreterErr> {
     let mut chip8 = Chip8::new(rom_data);
 
-    'run: loop {
-        let cur_instr = instrs::fetch(chip8.instr())?;
-        println!("Cur instruction ({}): {:?}", chip8.instr(), cur_instr);
+    loop {
+        let instr = chip8.fetch();
+        let cur_instr = instrs::decode(instr)?;
+        println!("Cur instruction ({}): {:?}", instr, cur_instr);
 
         instrs::exec(&mut chip8, cur_instr)?;
     }
-
-    Ok(())
 }
 
 impl Chip8 {
@@ -90,7 +89,7 @@ impl Chip8 {
         chip8
     }
 
-    fn instr(&mut self) -> u16 {
+    fn fetch(&mut self) -> u16 {
         let mut i: u16 = self.reg.i.into();
         let hi = self.ram[i as usize];
         let lo = self.ram[(i + 1) as usize];
