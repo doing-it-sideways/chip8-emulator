@@ -56,16 +56,23 @@ struct Chip8 {
     timer_sound: u8,
 }
 
-pub fn run(rom_data: Vec<u8>) -> Result<(), InterpreterErr> {
+pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
     let mut chip8 = Chip8::new(rom_data);
+    let mut gctx = graphics::GraphicsCtx::init(window_scale)?;
 
-    loop {
+    'runloop: loop {
         let instr = chip8.fetch();
         let cur_instr = instrs::decode(instr)?;
         println!("Cur instruction ({}): {:?}", instr, cur_instr);
 
         instrs::exec(&mut chip8, cur_instr)?;
+
+        if gctx.draw().is_err() {
+            break 'runloop;
+        }
     }
+
+    Ok(())
 }
 
 impl Chip8 {
