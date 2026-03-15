@@ -9,12 +9,18 @@ mod font;
 mod graphics;
 mod input;
 
-#[derive(PartialEq, PartialOrd, Default, Debug)]
+#[derive(PartialEq, PartialOrd, Default, Debug, Copy, Clone)]
 struct Address(u16);
 
 impl From<u16> for Address {
     fn from(addr: u16) -> Self {
         Address(addr & 0x0FFF)
+    }
+}
+
+impl From<Address> for u16 {
+    fn from(addr: Address) -> Self {
+        addr.0
     }
 }
 
@@ -25,7 +31,7 @@ const PC_INIT: Address = Address(ROM_START as u16);
 struct Registers {
     v: [u8; 0x10], // 16 general purpose register V0-VF, VF often modified by instructions as a flag register
     i: Address, // program counter
-    sp: Address,
+    sp: u16,
 }
 
 const RAM_DEFAULT_SIZE: usize = 0x1000;
@@ -69,6 +75,17 @@ impl Chip8 {
         chip8
     }
 
+    fn instr(&mut self) -> u16 {
+        let mut i: u16 = self.reg.i.into();
+        let hi = self.ram[i as usize];
+        let lo = self.ram[(i + 1) as usize];
+        i += 2;
+
+        self.reg.i = Address::from(i);
+
+        ((hi as u16) << 8) | lo as u16
+    }
+
     fn push_addr(&mut self, addr: Address) {
         self.stack.push(addr);
     }
@@ -87,7 +104,10 @@ pub fn run(rom_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
     let mut chip8 = Chip8::new(rom_data);
 
     'run: loop {
-        break 'run; // TODO
+        let cur_instr = instrs::fetch(chip8.instr())?;
+        println!("Cur instruction ({}): {:?}", chip8.instr(), cur_instr);
+
+        instrs::exec(&mut chip8, cur_instr);
     }
 
     Ok(())
