@@ -1,5 +1,6 @@
 use std::{
     error::Error,
+    fmt,
 };
 
 mod error;
@@ -11,7 +12,7 @@ mod input;
 
 use error::InterpreterErr;
 
-#[derive(PartialEq, PartialOrd, Default, Debug, Copy, Clone)]
+#[derive(PartialEq, PartialOrd, Default, Copy, Clone)]
 struct Address(u16);
 
 impl From<u16> for Address {
@@ -23,6 +24,13 @@ impl From<u16> for Address {
 impl From<Address> for u16 {
     fn from(addr: Address) -> Self {
         addr.0
+    }
+}
+
+/// Literally just the regular debug print except hex value instead of decimal
+impl fmt::Debug for Address {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Address").field(&format_args!("0x{:3X}", self.0)).finish()
     }
 }
 
@@ -63,7 +71,7 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
     'runloop: loop {
         let instr = chip8.fetch();
         let cur_instr = instrs::decode(instr)?;
-        println!("Cur instruction ({}): {:?}", instr, cur_instr);
+        println!("Cur instruction (0x{:04X}): {:?}", instr, cur_instr);
 
         instrs::exec(&mut chip8, cur_instr)?;
 
