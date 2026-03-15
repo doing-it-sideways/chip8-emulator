@@ -102,7 +102,7 @@ impl Chip8 {
     }
 }
 
-pub fn run(rom_data: Vec<u8>) -> Result<(), InterpreterErr> {
+pub fn run(rom_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
     let mut chip8 = Chip8::new(rom_data);
 
     'run: loop {
