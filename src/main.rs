@@ -29,5 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut rom_buf = Vec::new();
     file.read_to_end(&mut rom_buf)?;
 
-    interpreter::run(rom_buf)
+    interpreter::run(rom_buf)?;
+
+    Ok(())
 }

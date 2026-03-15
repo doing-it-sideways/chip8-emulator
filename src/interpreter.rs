@@ -92,17 +92,17 @@ impl Chip8 {
         self.stack.push(addr);
     }
 
-    fn pop_addr(&mut self) -> Result<Address, error::InterpreterErr> {
+    fn pop_addr(&mut self) -> Result<Address, InterpreterErr> {
         if let Some(addr) = self.stack.pop() {
             Ok(addr)
         }
         else {
-            Err(error::InterpreterErr::StackErr)
+            Err(InterpreterErr::StackErr)
         }
     }
 }
 
-pub fn run(rom_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
+pub fn run(rom_data: Vec<u8>) -> Result<(), InterpreterErr> {
     let mut chip8 = Chip8::new(rom_data);
 
     'run: loop {
