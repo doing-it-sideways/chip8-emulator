@@ -56,6 +56,19 @@ struct Chip8 {
     timer_sound: u8,
 }
 
+pub fn run(rom_data: Vec<u8>) -> Result<(), InterpreterErr> {
+    let mut chip8 = Chip8::new(rom_data);
+
+    'run: loop {
+        let cur_instr = instrs::fetch(chip8.instr())?;
+        println!("Cur instruction ({}): {:?}", chip8.instr(), cur_instr);
+
+        instrs::exec(&mut chip8, cur_instr)?;
+    }
+
+    Ok(())
+}
+
 impl Chip8 {
     fn new(rom_data: Vec<u8>) -> Self {
         assert!(rom_data.len() <= RAM_DEFAULT_SIZE - ROM_START);
@@ -100,17 +113,4 @@ impl Chip8 {
             Err(InterpreterErr::StackErr)
         }
     }
-}
-
-pub fn run(rom_data: Vec<u8>) -> Result<(), InterpreterErr> {
-    let mut chip8 = Chip8::new(rom_data);
-
-    'run: loop {
-        let cur_instr = instrs::fetch(chip8.instr())?;
-        println!("Cur instruction ({}): {:?}", chip8.instr(), cur_instr);
-
-        instrs::exec(&mut chip8, cur_instr)?;
-    }
-
-    Ok(())
 }
