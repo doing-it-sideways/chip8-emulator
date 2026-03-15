@@ -12,13 +12,13 @@ use sdl3::{
 const WIDTH: u32 = 64;
 const HEIGHT: u32 = 32;
 
-struct GraphicsCtx {
+pub struct GraphicsCtx {
     ctx: sdl3::Sdl,
     canvas: sdl3::render::WindowCanvas,
     event_pump: sdl3::EventPump,
 }
 
-struct QuitEvent;
+pub struct QuitEvent;
 
 impl GraphicsCtx {
     pub fn init(window_scale: u8) -> Result<Self, Box<dyn Error>> {
