@@ -9,6 +9,8 @@ mod font;
 mod graphics;
 mod input;
 
+use error::InterpreterErr;
+
 #[derive(PartialEq, PartialOrd, Default, Debug, Copy, Clone)]
 struct Address(u16);
 
@@ -100,14 +102,14 @@ impl Chip8 {
     }
 }
 
-pub fn run(rom_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
+pub fn run(rom_data: Vec<u8>) -> Result<(), InterpreterErr> {
     let mut chip8 = Chip8::new(rom_data);
 
     'run: loop {
         let cur_instr = instrs::fetch(chip8.instr())?;
         println!("Cur instruction ({}): {:?}", chip8.instr(), cur_instr);
 
-        instrs::exec(&mut chip8, cur_instr);
+        instrs::exec(&mut chip8, cur_instr)?;
     }
 
     Ok(())

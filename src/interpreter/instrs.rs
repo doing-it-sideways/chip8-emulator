@@ -53,6 +53,7 @@ impl Into<(u8, u8, u8, u8)> for OpCode {
 /// Lowercase names are what I find to be similar to other instructions in either assembly or
 /// similar to instructions I noticed on the Game Boy SOC.
 /// Uppercase names denote instructions that seem more Chip-8 specific in my view.
+// TODO: xo-chip extension
 #[allow(non_camel_case_types)]
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
@@ -149,7 +150,7 @@ pub fn fetch(instr: u16) -> Result<Instruction, InterpreterErr> {
     Ok(instr)
 }
 
-pub fn exec(state: &mut Chip8, instr: Instruction) {
+pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr> {
     use Instruction::*;
     
     match instr {
@@ -190,4 +191,6 @@ pub fn exec(state: &mut Chip8, instr: Instruction) {
         ld_pc_regs(reg) => todo!(),
         ld_regs_pc(reg) => todo!(),
     }
+
+    Ok(())
 }
