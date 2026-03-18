@@ -78,7 +78,7 @@ pub enum Instruction {
     sub_reg_rev(Reg, Reg),  // 8XY7
     lsl(Reg, Reg),          // 8XYE
     SkipNotEqReg(Reg, Reg), // 9XY0
-    ld_pc(Address),         // ANNN
+    ld_i(Address),         // ANNN
     jr(Address),            // BNNN
     GenRandom(Reg, u8),     // CXNN
     Draw(Reg, Reg, u8),     // DXYN
@@ -127,7 +127,7 @@ pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
             _ => return Err(InterpreterErr::InvalidInstr),
         },
         (9, x, y, 0) => SkipNotEqReg(x, y),
-        (0xA, _, _, _) => ld_pc(op_code.into()),
+        (0xA, _, _, _) => ld_i(op_code.into()),
         (0xB, _, _, _) => jr(op_code.into()),
         (0xC, x, _, _) => GenRandom(x, op_code.nn()),
         (0xD, x, y, n) => Draw(x, y, n),
@@ -166,13 +166,13 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
     match instr {
         nop => (),
         call_mchn(_) => (), // only used on real hardware
-        jmp(addr) => state.reg.pc = addr.into(),
+        jmp(addr) => regs.pc = addr.into(),
         jr(addr) => todo!(),
         call(addr) => todo!(),
         ret => todo!(),
         ld_reg(x, y) => todo!(),
         ld_nn(reg, num) => todo!(),
-        ld_pc(addr) => todo!(),
+        ld_i(addr) => regs.i = addr,
         ld_reg_delay(reg) => todo!(),
         ld_delay_reg(reg) => todo!(),
         ld_sound_reg(reg) => todo!(),
