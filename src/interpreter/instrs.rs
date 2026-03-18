@@ -167,7 +167,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         nop => (),
         call_mchn(_) => (), // only used on real hardware
         jmp(addr) => regs.pc = addr.into(),
-        jr(addr) => regs.pc = v[0] as u16 + addr.into(),
+        jr(addr) => regs.pc = v[0] as u16 + Into::<u16>::into(addr),
         call(addr) => todo!(),
         ret => todo!(),
         ld_reg(x, y) => v[x as usize] = v[y as usize],
