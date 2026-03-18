@@ -168,8 +168,12 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         call_mchn(_) => (), // only used on real hardware
         jmp(addr) => regs.pc = addr.into(),
         jr(addr) => regs.pc = v[0] as u16 + Into::<u16>::into(addr),
-        call(addr) => todo!(),
-        ret => todo!(),
+        call(addr) => {
+            let old_addr = state.reg.pc.into();
+            state.push_addr(old_addr);
+            state.reg.pc = addr.into();
+        },
+        ret => state.reg.pc = state.pop_addr()?.into(),
         ld_reg(x, y) => v[x as usize] = v[y as usize],
         ld_nn(reg, num) => v[reg as usize] = num,
         ld_i(addr) => regs.i = addr,
