@@ -156,6 +156,10 @@ impl Chip8 {
     fn skip(&mut self) {
         todo!()
     }
+
+    fn rand_mask(mask: u8) -> u8 {
+        todo!()
+    }
 }
 
 pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr> {
@@ -177,9 +181,9 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         ld_reg(x, y) => v[x as usize] = v[y as usize],
         ld_nn(reg, num) => v[reg as usize] = num,
         ld_i(addr) => regs.i = addr,
-        ld_reg_delay(reg) => todo!(),
-        ld_delay_reg(reg) => todo!(),
-        ld_sound_reg(reg) => todo!(),
+        ld_reg_delay(reg) => v[reg as usize] = state.timer_delay,
+        ld_delay_reg(reg) => state.timer_delay = v[reg as usize],
+        ld_sound_reg(reg) => state.timer_sound = v[reg as usize],
         ld_pc_bcd(reg) => todo!(),
         ld_pc_regs(reg) => todo!(),
         ld_regs_pc(reg) => todo!(),
@@ -191,6 +195,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         SkipKeyNotPressed(reg) => todo!(),
         add_reg(x, y) => todo!(),
         add_nn(reg, num) => v[reg as usize] = v[reg as usize].wrapping_add(num),
+        add_pc(reg) => regs.i = Into::<u16>::into(regs.i).wrapping_add(v[reg as usize] as u16).into(),
         sub_reg(x, y) => todo!(),
         sub_reg_rev(x, y) => todo!(),
         or(x, y) => v[x as usize] |= v[y as usize],
@@ -205,10 +210,9 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             v[x as usize] = v[y as usize] >> 1;
         },
         ClearScreen => todo!(),
-        GenRandom(reg, num) => todo!(),
+        GenRandom(reg, num) => v[reg as usize] = Chip8::rand_mask(num),
         Draw(x, y, num) => todo!(),
         WaitKey(reg) => todo!(),
-        add_pc(reg) => regs.i = Into::<u16>::into(regs.i).wrapping_add(v[reg as usize] as u16).into(),
         LoadSpritePC(reg) => todo!(),
     }
 
