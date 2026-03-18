@@ -35,12 +35,13 @@ impl fmt::Debug for Address {
 }
 
 const ROM_START: usize = 0x200;
-const PC_INIT: Address = Address(ROM_START as u16);
+const PC_INIT: u16 = ROM_START as u16;
 
 #[derive(Default, Debug)]
 struct Registers {
     v: [u8; 0x10], // 16 general purpose register V0-VF, VF often modified by instructions as a flag register
-    i: Address, // program counter
+    pc: u16,
+    i: Address, // memory address register? related to io for memory
     sp: u16,
 }
 
@@ -83,6 +84,7 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// General functions
 impl Chip8 {
     fn new(rom_data: Vec<u8>) -> Self {
         assert!(rom_data.len() <= RAM_DEFAULT_SIZE - ROM_START);
@@ -90,7 +92,7 @@ impl Chip8 {
         let mut chip8 = Chip8 {
             ram: vec![0; RAM_DEFAULT_SIZE.into()],
             reg: Registers {
-                i: PC_INIT,
+                pc: PC_INIT,
                 ..Registers::default()
             },
             ..Chip8::default()
@@ -105,12 +107,10 @@ impl Chip8 {
     }
 
     fn fetch(&mut self) -> u16 {
-        let mut i: u16 = self.reg.i.into();
-        let hi = self.ram[i as usize];
-        let lo = self.ram[(i + 1) as usize];
-        i += 2;
-
-        self.reg.i = Address::from(i);
+        let pc = &mut self.reg.pc;
+        let hi = self.ram[*pc as usize];
+        let lo = self.ram[(*pc + 1) as usize];
+        *pc += 2;
 
         ((hi as u16) << 8) | lo as u16
     }
