@@ -208,7 +208,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         GenRandom(reg, num) => todo!(),
         Draw(x, y, num) => todo!(),
         WaitKey(reg) => todo!(),
-        add_pc(reg) => todo!(),
+        add_pc(reg) => regs.i = Into::<u16>::into(regs.i).wrapping_add(v[reg as usize] as u16).into(),
         LoadSpritePC(reg) => todo!(),
     }
 
