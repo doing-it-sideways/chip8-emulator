@@ -66,8 +66,8 @@ pub enum Instruction {
     SkipEqNum(Reg, u8),     // 3XNN
     SkipNotEqNum(Reg, u8),  // 4XNN
     SkipEqReg(Reg, Reg),    // 5XY0
-    ld_nn(Reg, Reg),        // 6XNN
-    add_nn(Reg, Reg),       // 7XNN
+    ld_nn(Reg, u8),         // 6XNN
+    add_nn(Reg, u8),        // 7XNN
     ld_reg(Reg, Reg),       // 8XY0
     or(Reg, Reg),           // 8XY1
     and(Reg, Reg),          // 8XY2
@@ -151,46 +151,61 @@ pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
     Ok(instr)
 }
 
+/// Instruction related functions
+impl Chip8 {
+    fn skip(&mut self) {
+        todo!()
+    }
+}
+
 pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr> {
     use Instruction::*;
+    let regs = &mut state.reg;
+    let v = &mut regs.v;
     
     match instr {
         nop => (),
         call_mchn(_) => (), // only used on real hardware
-        ClearScreen => todo!(),
-        ret => todo!(),
-        jmp(addr) => todo!(),
-        call(addr) => todo!(),
-        SkipEqNum(reg, num) => todo!(),
-        SkipNotEqNum(reg, num) => todo!(),
-        SkipEqReg(x, y) => todo!(),
-        ld_nn(x, y) => todo!(),
-        add_nn(x, y) => todo!(),
-        ld_reg(x, y) => todo!(),
-        or(x, y) => todo!(),
-        and(x, y) => todo!(),
-        xor(x, y) => todo!(),
-        add_reg(x, y) => todo!(),
-        sub_reg(x, y) => todo!(),
-        lsr(x, y) => todo!(),
-        sub_reg_rev(x, y) => todo!(),
-        lsl(x, y) => todo!(),
-        SkipNotEqReg(x, y) => todo!(),
-        ld_pc(addr) => todo!(),
+        jmp(addr) => state.reg.pc = addr.into(),
         jr(addr) => todo!(),
-        GenRandom(reg, num) => todo!(),
-        Draw(x, y, num) => todo!(),
-        SkipKeyPressed(reg) => todo!(),
-        SkipKeyNotPressed(reg) => todo!(),
+        call(addr) => todo!(),
+        ret => todo!(),
+        ld_reg(x, y) => todo!(),
+        ld_nn(reg, num) => todo!(),
+        ld_pc(addr) => todo!(),
         ld_reg_delay(reg) => todo!(),
-        WaitKey(reg) => todo!(),
         ld_delay_reg(reg) => todo!(),
         ld_sound_reg(reg) => todo!(),
-        add_pc(reg) => todo!(),
-        LoadSpritePC(reg) => todo!(),
         ld_pc_bcd(reg) => todo!(),
         ld_pc_regs(reg) => todo!(),
         ld_regs_pc(reg) => todo!(),
+        SkipEqNum(reg, num) => if v[reg as usize] == num { state.skip() },
+        SkipNotEqNum(reg, num) => if v[reg as usize] != num { state.skip() },
+        SkipEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip() },
+        SkipNotEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip() },
+        SkipKeyPressed(reg) => todo!(),
+        SkipKeyNotPressed(reg) => todo!(),
+        add_reg(x, y) => todo!(),
+        add_nn(reg, num) => todo!(),
+        sub_reg(x, y) => todo!(),
+        sub_reg_rev(x, y) => todo!(),
+        or(x, y) => v[x as usize] |= v[y as usize],
+        and(x, y) => v[x as usize] &= v[y as usize],
+        xor(x, y) => v[x as usize] ^= v[y as usize],
+        lsl(x, y) => {
+            v[0xF] = v[y as usize] >> 7;
+            v[x as usize] = v[y as usize] << 1;
+        },
+        lsr(x, y) => {
+            v[0xF] = v[y as usize] & 1;
+            v[x as usize] = v[y as usize] >> 1;
+        },
+        ClearScreen => todo!(),
+        GenRandom(reg, num) => todo!(),
+        Draw(x, y, num) => todo!(),
+        WaitKey(reg) => todo!(),
+        add_pc(reg) => todo!(),
+        LoadSpritePC(reg) => todo!(),
     }
 
     Ok(())
