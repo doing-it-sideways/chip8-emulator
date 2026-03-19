@@ -90,9 +90,9 @@ pub enum Instruction {
     ld_sound_reg(Reg),      // FX18
     add_pc(Reg),            // FX1E
     LoadSpritePC(Reg),      // FX29
-    ld_pc_bcd(Reg),         // FX33
-    ld_pc_regs(Reg),        // FX55
-    ld_regs_pc(Reg)         // FX65
+    ld_i_bcd(Reg),         // FX33
+    ld_i_regs(Reg),        // FX55
+    ld_regs_i(Reg)         // FX65
 }
 
 pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
@@ -140,9 +140,9 @@ pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
             0x18 => ld_sound_reg(x),
             0x1E => add_pc(x),
             0x29 => LoadSpritePC(x),
-            0x33 => ld_pc_bcd(x),
-            0x55 => ld_pc_regs(x),
-            0x65 => ld_regs_pc(x),
+            0x33 => ld_i_bcd(x),
+            0x55 => ld_i_regs(x),
+            0x65 => ld_regs_i(x),
             _ => return Err(InterpreterErr::InvalidInstr),
         },
         _ => return Err(InterpreterErr::InvalidInstr),
@@ -158,6 +158,10 @@ impl Chip8 {
     }
 
     fn rand_mask(mask: u8) -> u8 {
+        todo!()
+    }
+
+    fn store_bcd(&mut self, reg: usize) {
         todo!()
     }
 }
@@ -184,9 +188,17 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         ld_reg_delay(reg) => v[reg as usize] = state.timer_delay,
         ld_delay_reg(reg) => state.timer_delay = v[reg as usize],
         ld_sound_reg(reg) => state.timer_sound = v[reg as usize],
-        ld_pc_bcd(reg) => todo!(),
-        ld_pc_regs(reg) => todo!(),
-        ld_regs_pc(reg) => todo!(),
+        ld_i_bcd(reg) => state.store_bcd(reg as usize),
+        ld_i_regs(reg) => {
+            let reg = reg as usize;
+            let i = regs.i.0 as usize;
+            state.ram[i..=(i + reg)].copy_from_slice(&v[0..=reg]);
+        },
+        ld_regs_i(reg) => {
+            let reg = reg as usize;
+            let i = regs.i.0 as usize;
+            v[0..=reg].copy_from_slice(&state.ram[i..=(i + reg)])
+        },
         SkipEqNum(reg, num) => if v[reg as usize] == num { state.skip() },
         SkipNotEqNum(reg, num) => if v[reg as usize] != num { state.skip() },
         SkipEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip() },
@@ -195,7 +207,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         SkipKeyNotPressed(reg) => todo!(),
         add_reg(x, y) => todo!(),
         add_nn(reg, num) => v[reg as usize] = v[reg as usize].wrapping_add(num),
-        add_pc(reg) => regs.i = Into::<u16>::into(regs.i).wrapping_add(v[reg as usize] as u16).into(),
+        add_pc(reg) => regs.i = regs.i.0.wrapping_add(v[reg as usize] as u16).into(),
         sub_reg(x, y) => todo!(),
         sub_reg_rev(x, y) => todo!(),
         or(x, y) => v[x as usize] |= v[y as usize],
