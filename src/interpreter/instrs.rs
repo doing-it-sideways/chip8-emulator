@@ -186,7 +186,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         call(addr) => {
             let old_addr = state.reg.pc.into();
             state.push_addr(old_addr);
-            state.reg.pc = addr.into();
+            state.reg.pc = addr.into()
         },
         ret => state.reg.pc = state.pop_addr()?.into(),
         ld_reg(x, y) => v[x as usize] = v[y as usize],
@@ -213,11 +213,23 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         SkipNotEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip() },
         SkipKeyPressed(reg) => todo!(),
         SkipKeyNotPressed(reg) => todo!(),
-        add_reg(x, y) => todo!(),
+        add_reg(x, y) => {
+            let carry: bool;
+            (v[x as usize], carry) = v[x as usize].overflowing_add(v[y as usize]);
+            v[0xF] = if carry { 0x1 } else { 0x0 };
+        },
         add_nn(reg, num) => v[reg as usize] = v[reg as usize].wrapping_add(num),
         add_pc(reg) => regs.i = regs.i.0.wrapping_add(v[reg as usize] as u16).into(),
-        sub_reg(x, y) => todo!(),
-        sub_reg_rev(x, y) => todo!(),
+        sub_reg(x, y) => {
+            let carry: bool;
+            (v[x as usize], carry) = v[x as usize].overflowing_sub(v[y as usize]);
+            v[0xF] = if carry { 0x0 } else { 0x1 };
+        },
+        sub_reg_rev(x, y) => {
+            let carry: bool;
+            (v[x as usize], carry) = v[y as usize].overflowing_sub(v[x as usize]);
+            v[0xF] = if carry { 0x0 } else { 0x1 };
+        },
         or(x, y) => v[x as usize] |= v[y as usize],
         and(x, y) => v[x as usize] &= v[y as usize],
         xor(x, y) => v[x as usize] ^= v[y as usize],
