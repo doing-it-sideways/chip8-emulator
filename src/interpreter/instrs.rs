@@ -162,7 +162,14 @@ impl Chip8 {
     }
 
     fn store_bcd(&mut self, reg: usize) {
-        todo!()
+        let mut val = self.reg.v[reg];
+        let i = self.reg.i.0 as usize;
+
+        self.ram[i + 2] = val % 10;
+        val /= 10;
+        self.ram[i + 1] = val % 10;
+        val /= 10;
+        self.ram[i] = val;
     }
 }
 
