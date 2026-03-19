@@ -241,7 +241,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             v[0xF] = v[y as usize] & 1;
             v[x as usize] = v[y as usize] >> 1;
         },
-        ClearScreen => todo!(),
+        ClearScreen => state.pixels = [0; 0x20],
         GenRandom(reg, num) => v[reg as usize] = Chip8::rand_mask(num),
         Draw(x, y, num) => todo!(),
         WaitKey(reg) => todo!(),
