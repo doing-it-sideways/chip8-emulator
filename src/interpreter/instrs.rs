@@ -57,10 +57,10 @@ impl Into<(u8, u8, u8, u8)> for OpCode {
 #[allow(non_camel_case_types)]
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
-    nop,                    // 0x0000
+    nop,                    // 0000
     call_mchn(Address),     // 0NNN
-    ClearScreen,            // 0x00E0
-    ret,                    // 0x00EE
+    ClearScreen,            // 00E0
+    ret,                    // 00EE
     jmp(Address),           // 1NNN
     call(Address),          // 2NNN
     SkipEqNum(Reg, u8),     // 3XNN
@@ -78,21 +78,21 @@ pub enum Instruction {
     sub_reg_rev(Reg, Reg),  // 8XY7
     lsl(Reg, Reg),          // 8XYE
     SkipNotEqReg(Reg, Reg), // 9XY0
-    ld_i(Address),         // ANNN
+    ld_i(Address),          // ANNN
     jr(Address),            // BNNN
     GenRandom(Reg, u8),     // CXNN
     Draw(Reg, Reg, u8),     // DXYN
     SkipKeyPressed(Reg),    // EX9E
     SkipKeyNotPressed(Reg), // EXA1
     ld_reg_delay(Reg),      // FX07
-    WaitKey(Reg),          // FX0A
+    WaitKey(Reg),           // FX0A
     ld_delay_reg(Reg),      // FX15
     ld_sound_reg(Reg),      // FX18
     add_pc(Reg),            // FX1E
-    LoadSpritePC(Reg),      // FX29
-    ld_i_bcd(Reg),         // FX33
-    ld_i_regs(Reg),        // FX55
-    ld_regs_i(Reg)         // FX65
+    ld_i_font(Reg),         // FX29
+    ld_i_bcd(Reg),          // FX33
+    ld_i_regs(Reg),         // FX55
+    ld_regs_i(Reg)          // FX65
 }
 
 pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
@@ -139,7 +139,7 @@ pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
             0x15 => ld_delay_reg(x),
             0x18 => ld_sound_reg(x),
             0x1E => add_pc(x),
-            0x29 => LoadSpritePC(x),
+            0x29 => ld_i_font(x),
             0x33 => ld_i_bcd(x),
             0x55 => ld_i_regs(x),
             0x65 => ld_regs_i(x),
@@ -199,6 +199,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             let i = regs.i.0 as usize;
             v[0..=reg].copy_from_slice(&state.ram[i..=(i + reg)])
         },
+        ld_i_font(reg) => regs.i = ((v[reg as usize] as u16) * 5).into(), // from aquova tutorial -> stored font in beginning of ram
         SkipEqNum(reg, num) => if v[reg as usize] == num { state.skip() },
         SkipNotEqNum(reg, num) => if v[reg as usize] != num { state.skip() },
         SkipEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip() },
@@ -225,7 +226,6 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         GenRandom(reg, num) => v[reg as usize] = Chip8::rand_mask(num),
         Draw(x, y, num) => todo!(),
         WaitKey(reg) => todo!(),
-        LoadSpritePC(reg) => todo!(),
     }
 
     Ok(())
