@@ -154,11 +154,11 @@ pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
 /// Instruction related functions
 impl Chip8 {
     fn skip(&mut self) {
-        todo!()
+        self.reg.pc += 2;
     }
 
     fn rand_mask(mask: u8) -> u8 {
-        todo!()
+        rand::random::<u8>() & mask
     }
 
     fn store_bcd(&mut self, reg: usize) {
