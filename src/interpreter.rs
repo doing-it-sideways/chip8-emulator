@@ -30,12 +30,13 @@ impl From<Address> for u16 {
 /// Literally just the regular debug print except hex value instead of decimal
 impl fmt::Debug for Address {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("Address").field(&format_args!("0x{:3X}", self.0)).finish()
+        f.debug_tuple("Address").field(&format_args!("0x{:03X}", self.0)).finish()
     }
 }
 
 const ROM_START: usize = 0x200;
 const PC_INIT: u16 = ROM_START as u16;
+const PC_MAX: u16 = 0xE8F;
 
 #[derive(Default, Debug)]
 struct Registers {
