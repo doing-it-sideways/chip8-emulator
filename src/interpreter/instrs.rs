@@ -4,6 +4,8 @@ use super::{
     error::InterpreterErr
 };
 
+use crate::interpreter::PC_MAX;
+
 #[derive(Debug, Copy, Clone)]
 pub struct OpCode(u16);
 
@@ -153,8 +155,15 @@ pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
 
 /// Instruction related functions
 impl Chip8 {
-    fn skip(&mut self) {
+    fn skip(&mut self) -> Result<(), InterpreterErr> {
         self.reg.pc += 2;
+
+        if self.reg.pc > PC_MAX {
+            Err(InterpreterErr::MemErr)
+        }
+        else {
+            Ok(())
+        }
     }
 
     fn rand_mask(mask: u8) -> u8 {
@@ -170,6 +179,13 @@ impl Chip8 {
         self.ram[i + 1] = val % 10;
         val /= 10;
         self.ram[i] = val;
+    }
+
+    fn is_key_pressed(&self, reg: usize) -> bool {
+        let key = self.reg.v[reg];
+        assert!(key <= 0xF);
+
+        (self.input & (1 << key)) >= 1
     }
 }
 
@@ -207,12 +223,12 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             v[0..=reg].copy_from_slice(&state.ram[i..=(i + reg)])
         },
         ld_i_font(reg) => regs.i = ((v[reg as usize] as u16) * 5).into(), // from aquova tutorial -> stored font in beginning of ram
-        SkipEqNum(reg, num) => if v[reg as usize] == num { state.skip() },
-        SkipNotEqNum(reg, num) => if v[reg as usize] != num { state.skip() },
-        SkipEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip() },
-        SkipNotEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip() },
-        SkipKeyPressed(reg) => todo!(),
-        SkipKeyNotPressed(reg) => todo!(),
+        SkipEqNum(reg, num) => if v[reg as usize] == num { state.skip()? },
+        SkipNotEqNum(reg, num) => if v[reg as usize] != num { state.skip()? },
+        SkipEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip()? },
+        SkipNotEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip()? },
+        SkipKeyPressed(reg) => if state.is_key_pressed(reg as usize) { state.skip()? },
+        SkipKeyNotPressed(reg) => if !state.is_key_pressed(reg as usize) { state.skip()? },
         add_reg(x, y) => {
             let carry: bool;
             (v[x as usize], carry) = v[x as usize].overflowing_add(v[y as usize]);
@@ -244,7 +260,14 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         ClearScreen => state.pixels = [0; 0x20],
         GenRandom(reg, num) => v[reg as usize] = Chip8::rand_mask(num),
         Draw(x, y, num) => todo!(),
-        WaitKey(reg) => todo!(),
+        WaitKey(reg) => { 
+            if state.is_key_pressed(reg as usize) {
+                v[reg as usize] = todo!()
+            }
+            else {
+                state.reg.pc -= 2
+            }
+        },
     }
 
     Ok(())
