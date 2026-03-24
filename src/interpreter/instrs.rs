@@ -185,11 +185,11 @@ impl Chip8 {
         self.input != 0
     }
 
-    fn is_key_pressed(&self, reg: usize) -> bool {
+    fn is_key_reg_pressed(&self, reg: usize) -> bool {
         let key = self.reg.v[reg];
         assert!(key <= 0xF);
 
-        (self.input & (1 << key)) >= 1
+        self.is_key_pressed(key)
     }
 }
 
@@ -231,8 +231,8 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         SkipNotEqNum(reg, num) => if v[reg as usize] != num { state.skip()? },
         SkipEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip()? },
         SkipNotEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip()? },
-        SkipKeyPressed(reg) => if state.is_key_pressed(reg as usize) { state.skip()? },
-        SkipKeyNotPressed(reg) => if !state.is_key_pressed(reg as usize) { state.skip()? },
+        SkipKeyPressed(reg) => if state.is_key_reg_pressed(reg as usize) { state.skip()? },
+        SkipKeyNotPressed(reg) => if !state.is_key_reg_pressed(reg as usize) { state.skip()? },
         add_reg(x, y) => {
             let carry: bool;
             (v[x as usize], carry) = v[x as usize].overflowing_add(v[y as usize]);
@@ -264,9 +264,14 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         ClearScreen => state.pixels = [0; 0x20],
         GenRandom(reg, num) => v[reg as usize] = Chip8::rand_mask(num),
         Draw(x, y, num) => todo!(),
-        WaitKey(reg) => { 
+        WaitKey(reg) => {
             if state.any_key_pressed() {
-                v[reg as usize] = todo!()
+                for key in 0..0xF {
+                    if state.is_key_pressed(key) {
+                        let v = &mut state.reg.v; // what great borrowing rules, i hate this.
+                        v[reg as usize] = key;
+                    }
+                }
             }
             else {
                 state.reg.pc -= 2
