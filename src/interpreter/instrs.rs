@@ -181,6 +181,10 @@ impl Chip8 {
         self.ram[i] = val;
     }
 
+    fn any_key_pressed(&self) -> bool {
+        self.input != 0
+    }
+
     fn is_key_pressed(&self, reg: usize) -> bool {
         let key = self.reg.v[reg];
         assert!(key <= 0xF);
@@ -261,7 +265,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         GenRandom(reg, num) => v[reg as usize] = Chip8::rand_mask(num),
         Draw(x, y, num) => todo!(),
         WaitKey(reg) => { 
-            if state.is_key_pressed(reg as usize) {
+            if state.any_key_pressed() {
                 v[reg as usize] = todo!()
             }
             else {
