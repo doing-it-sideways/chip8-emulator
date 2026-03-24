@@ -191,6 +191,10 @@ impl Chip8 {
 
         self.is_key_pressed(key)
     }
+
+    fn set_pixels(&mut self, x: u8, y: u8, bytes: u8) {
+        todo!()
+    }
 }
 
 pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr> {
@@ -263,7 +267,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         },
         ClearScreen => state.pixels = [0; 0x20],
         GenRandom(reg, num) => v[reg as usize] = Chip8::rand_mask(num),
-        Draw(x, y, num) => todo!(),
+        Draw(x, y, num) => state.set_pixels(x, y, num),
         WaitKey(reg) => {
             if state.any_key_pressed() {
                 for key in 0..0xF {
