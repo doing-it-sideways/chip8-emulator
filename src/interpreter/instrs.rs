@@ -4,7 +4,10 @@ use super::{
     error::InterpreterErr
 };
 
-use crate::interpreter::PC_MAX;
+use crate::interpreter::{
+    PC_MAX,
+    graphics::{ WIDTH, HEIGHT }
+};
 
 #[derive(Debug, Copy, Clone)]
 pub struct OpCode(u16);
@@ -57,7 +60,7 @@ impl Into<(u8, u8, u8, u8)> for OpCode {
 /// Uppercase names denote instructions that seem more Chip-8 specific in my view.
 // TODO: xo-chip extension
 #[allow(non_camel_case_types)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum Instruction {
     nop,                    // 0000
     call_mchn(Address),     // 0NNN
@@ -193,7 +196,34 @@ impl Chip8 {
     }
 
     fn set_pixels(&mut self, x: u8, y: u8, bytes: u8) {
-        todo!()
+        // sprites always 8 pixels wide, height ranging from 1-15 pixels
+        assert!(bytes <= 8 * 15);
+        const SPRITE_WIDTH: u8 = 8;
+
+        let x = self.reg.v[x as usize];
+        let y = self.reg.v[y as usize];
+        let start: u16 = self.reg.i.into();
+        let mut unset = false;
+        
+        for i in 0..bytes {
+            let x = x + i % SPRITE_WIDTH;
+            let y = y + i / SPRITE_WIDTH;
+
+            let old_val = self.get_pixel(x, y);
+            let new_val = old_val ^ self.ram[(start + i as u16) as usize];
+
+            self.set_pixel(x, y, new_val);
+            if old_val == 1 && new_val == 0 {
+                unset = true;
+            }
+        }
+
+        if unset {
+            self.reg.v[0xF] = 0x1;
+        }
+        else {
+            self.reg.v[0xF] = 0x0;
+        }
     }
 }
 

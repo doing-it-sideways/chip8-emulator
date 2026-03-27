@@ -145,7 +145,12 @@ impl Chip8 {
         (val & 1) as u8
     }
 
-    fn set_pixel(&self, x: u8, y: u8) {
-        todo!()
+    fn set_pixel(&mut self, x: u8, y: u8, val: u8) {
+        if val == 0x1 {
+            self.pixels[y as usize] |= 1 << (x % graphics::WIDTH as u8);
+        }
+        else {
+            self.pixels[y as usize] &= !(1 << (x % graphics::WIDTH as u8));
+        }
     }
 }
