@@ -1,6 +1,5 @@
 use std::{ 
     error::Error,
-    time::Duration,
 };
 
 use sdl3::{ 
@@ -9,8 +8,8 @@ use sdl3::{
     pixels::Color,
 };
 
-const WIDTH: u32 = 64;
-const HEIGHT: u32 = 32;
+pub const WIDTH: u32 = 64;
+pub const HEIGHT: u32 = 32;
 
 pub struct GraphicsCtx {
     ctx: sdl3::Sdl,
@@ -25,9 +24,10 @@ impl GraphicsCtx {
         let ctx = sdl3::init()?;
         let vid_subsys = ctx.video()?;
 
+        let window_scale = window_scale as u32;
         let window = vid_subsys.window("Chip-8 Interpreter",
-                                        WIDTH * window_scale as u32,
-                                        HEIGHT * window_scale as u32)
+                                        WIDTH * window_scale,
+                                        HEIGHT * window_scale)
             .opengl()
             .position_centered()
             .build()?;
@@ -38,7 +38,7 @@ impl GraphicsCtx {
         canvas.clear();
         canvas.present();
 
-        let mut event_pump = ctx.event_pump()?;
+        let event_pump = ctx.event_pump()?;
     
         Ok(GraphicsCtx {
             ctx,
@@ -63,7 +63,6 @@ impl GraphicsCtx {
         }
 
         self.canvas.present();
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
 
         Ok(())
     }

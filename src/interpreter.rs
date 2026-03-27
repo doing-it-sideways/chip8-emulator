@@ -1,6 +1,7 @@
 use std::{
     error::Error,
     fmt,
+    time::Duration,
 };
 
 mod error;
@@ -71,6 +72,8 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
     let mut gctx = graphics::GraphicsCtx::init(window_scale)?;
 
     'runloop: loop {
+        // TODO: input
+        
         let instr = chip8.fetch();
         let cur_instr = instrs::decode(instr)?;
         println!("Cur instruction (0x{:04X}): {:?}", instr, cur_instr);
@@ -80,6 +83,8 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
         if gctx.draw().is_err() {
             break 'runloop;
         }
+
+        std::thread::sleep(Duration::from_secs_f64(1.0 / 60.0));
     }
 
     Ok(())
@@ -133,5 +138,14 @@ impl Chip8 {
         assert!(key <= 0xF);
 
         (self.input >> key) & 1 == 1
+    }
+
+    fn get_pixel(&self, x: u8, y: u8) -> u8 {
+        let val = self.pixels[y as usize] >> (x % graphics::WIDTH as u8) as u64;
+        (val & 1) as u8
+    }
+
+    fn set_pixel(&self, x: u8, y: u8) {
+        todo!()
     }
 }
