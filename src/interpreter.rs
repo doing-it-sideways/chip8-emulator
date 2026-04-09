@@ -13,6 +13,8 @@ mod input;
 
 use error::InterpreterErr;
 
+use graphics::QuitEvent;
+
 #[derive(PartialEq, PartialOrd, Default, Copy, Clone)]
 struct Address(u16);
 
@@ -50,6 +52,8 @@ struct Registers {
 const RAM_DEFAULT_SIZE: usize = 0x1000;
 const STACK_DEFAULT_SIZE: usize = 0x100;
 
+type PixelBits = [u64; 0x20]; // 64x32 on/off values
+
 #[derive(Default, Debug)]
 // 60 t/s
 struct Chip8 {
@@ -58,7 +62,7 @@ struct Chip8 {
     // but with vec we grow it up cause for chip-8 it doesn't matter cause stack is only for addresses
     stack: Vec<Address>,
     
-    pixels: [u64; 0x20], // 64x32 on/off values
+    pixels: PixelBits,
     
     reg: Registers,
     input: u16, // bitwise 16 buttons 0 = msb, 0xF = lsb
@@ -69,7 +73,9 @@ struct Chip8 {
 
 pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
     let mut chip8 = Chip8::new(rom_data);
-    let mut gctx = graphics::GraphicsCtx::init(window_scale)?;
+    
+    let sdl_ctx = sdl3::init()?;
+    let mut gctx = graphics::GraphicsCtx::init(&sdl_ctx, window_scale)?;
 
     'runloop: loop {
         // TODO: input
@@ -80,7 +86,7 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
 
         instrs::exec(&mut chip8, cur_instr)?;
 
-        if gctx.draw().is_err() {
+        if let Err(QuitEvent) = gctx.draw(&chip8.pixels) {
             break 'runloop;
         }
 
