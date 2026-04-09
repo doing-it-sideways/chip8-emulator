@@ -63,7 +63,8 @@ impl Into<(u8, u8, u8, u8)> for OpCode {
 #[derive(Debug)]
 pub enum Instruction {
     nop,                    // 0000
-    call_mchn(Address),     // 0NNN
+    #[allow(unused)]
+    call_mchn(Address),     // 0NNN -- this instruction is treated as a nop
     ClearScreen,            // 00E0
     ret,                    // 00EE
     jmp(Address),           // 1NNN
