@@ -199,11 +199,9 @@ impl Chip8 {
     fn set_pixels(&mut self, x: u8, y: u8, bytes: u8) {
         // sprites always 8 pixels wide, height ranging from 1-15 pixels
         assert!(bytes <= 8 * 15);
-        const SPRITE_WIDTH: u8 = 8;
 
         let x = self.reg.v[x as usize];
         let y = self.reg.v[y as usize];
-        let start: u16 = self.reg.i.into();
         let mut flipped = false;
         
         for y_line in 0..bytes {
