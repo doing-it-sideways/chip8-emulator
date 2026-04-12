@@ -5,26 +5,24 @@ use std::{
 use sdl3::{ 
     event::Event, // TODO: move to input
     keyboard::Keycode, // TODO: move to input
-    pixels::{
-        Color,
-    },
+    pixels::{Color, PixelFormat},
     render::{
         Texture,
         TextureAccess,
-    }
+    }, video::WindowFlags
 };
+
+use super::ProgramStatus;
 
 pub const WIDTH: u32 = 64;
 pub const HEIGHT: u32 = 32;
 
 pub struct GraphicsCtx {
     canvas: sdl3::render::WindowCanvas,
-    texture: sdl3::render::Texture,
+    screen_tex: sdl3::render::Texture,
     event_pump: sdl3::EventPump,
+    pixel_buf: [u8; (WIDTH * HEIGHT * 4) as usize]
 }
-
-// TODO: move to input
-pub struct QuitEvent;
 
 impl GraphicsCtx {
     pub fn init(ctx: &sdl3::Sdl, window_scale: u8) -> Result<Self, Box<dyn Error>> {
@@ -42,32 +40,40 @@ impl GraphicsCtx {
 
         let event_pump = ctx.event_pump()?;
 
-        let texture = canvas.texture_creator().create_texture(None, 
+        let screen_tex = canvas.texture_creator().create_texture(PixelFormat::RGB24, 
                                                               TextureAccess::Streaming,
                                                               WIDTH, HEIGHT)?;
-        
-        //canvas.copy(&texture, None, None);
     
         Ok(GraphicsCtx {
             canvas,
-            texture,
-            event_pump
+            screen_tex,
+            event_pump,
+            pixel_buf: [0u8; (WIDTH * HEIGHT * 4) as usize],
         })
     }
 
-    pub fn draw(&mut self, pixels: &super::PixelBits) -> Result<(), QuitEvent> {
-        let mut i = 0;
-        i = (i + 1) % 255;
-        self.canvas.set_draw_color(Color::RGB(i, 64, 255 - i));
+    pub fn draw(&mut self, pixels: &super::PixelBits) -> Result<ProgramStatus, Box<dyn Error>> {
         self.canvas.clear();
-        self.canvas.texture_creator();
-        
+
+        for y in 0..HEIGHT as u8 {
+            for x in 0..WIDTH as u8 {
+                let index = 4 * (y as usize * WIDTH as usize + x as usize);
+                let color = if pixels.get(x, y) == 0 { 0x00 } else { 0xFF };
+
+                for i in 0..4 {
+                    self.pixel_buf[index + i] = color;
+                }
+            }
+        }
+
+        self.screen_tex.update(None, &self.pixel_buf, WIDTH as usize)?;
+        self.canvas.copy(&self.screen_tex, None, None)?;
 
         // TODO: move to input
         for event in self.event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    return Err(QuitEvent);
+                    return Ok(ProgramStatus::Quit);
                 },
                 _ => {}
             }
@@ -75,6 +81,6 @@ impl GraphicsCtx {
 
         self.canvas.present();
 
-        Ok(())
+        Ok(ProgramStatus::Ok)
     }
 }

@@ -13,8 +13,6 @@ mod input;
 
 use error::InterpreterErr;
 
-use graphics::QuitEvent;
-
 #[derive(PartialEq, PartialOrd, Default, Copy, Clone)]
 struct Address(u16);
 
@@ -71,7 +69,12 @@ struct Chip8 {
 #[derive(Default, Debug)]
 struct PixelBits([u64; 0x20]);
 
-pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
+pub enum ProgramStatus {
+    Ok,
+    Quit,
+}
+
+pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<ProgramStatus, Box<dyn Error>> {
     let mut chip8 = Chip8::new(rom_data);
     
     let sdl_ctx = sdl3::init()?;
@@ -86,14 +89,14 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
 
         instrs::exec(&mut chip8, cur_instr)?;
 
-        if let Err(_) = gctx.draw(&chip8.pixels) {
+        if let Ok(ProgramStatus::Quit) = gctx.draw(&chip8.pixels) {
             break 'runloop;
         }
 
         std::thread::sleep(Duration::from_secs_f64(1.0 / 60.0));
     }
 
-    Ok(())
+    Ok(ProgramStatus::Quit)
 }
 
 /// General functions
