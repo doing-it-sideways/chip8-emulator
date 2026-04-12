@@ -37,10 +37,6 @@ impl fmt::Debug for Address {
     }
 }
 
-const ROM_START: usize = 0x200;
-const PC_INIT: u16 = ROM_START as u16;
-const PC_MAX: u16 = 0xE8F;
-
 #[derive(Default, Debug)]
 struct Registers {
     v: [u8; 0x10], // 16 general purpose register V0-VF, VF often modified by instructions as a flag register
@@ -49,10 +45,11 @@ struct Registers {
     sp: u16,
 }
 
+const ROM_START: usize = 0x200;
+const PC_INIT: u16 = ROM_START as u16;
+const PC_MAX: u16 = 0xE8F;
 const RAM_DEFAULT_SIZE: usize = 0x1000;
 const STACK_DEFAULT_SIZE: usize = 0x100;
-
-type PixelBits = [u64; 0x20]; // 64x32 on/off values
 
 #[derive(Default, Debug)]
 // 60 t/s
@@ -71,6 +68,9 @@ struct Chip8 {
     timer_sound: u8,
 }
 
+#[derive(Default, Debug)]
+struct PixelBits([u64; 0x20]);
+
 pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
     let mut chip8 = Chip8::new(rom_data);
     
@@ -86,7 +86,7 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<(), Box<dyn Error>> {
 
         instrs::exec(&mut chip8, cur_instr)?;
 
-        if let Err(QuitEvent) = gctx.draw(&chip8.pixels) {
+        if let Err(_) = gctx.draw(&chip8.pixels) {
             break 'runloop;
         }
 
@@ -145,18 +145,20 @@ impl Chip8 {
 
         (self.input >> key) & 1 == 1
     }
+}
 
-    fn get_pixel(&self, x: u8, y: u8) -> u8 {
-        let val = self.pixels[y as usize] >> (x % graphics::WIDTH as u8) as u64;
+impl PixelBits {
+    fn get(&self, x: u8, y: u8) -> u8 {
+        let val = self.0[y as usize] >> (x % graphics::WIDTH as u8) as u64;
         (val & 1) as u8
     }
 
-    fn set_pixel(&mut self, x: u8, y: u8, val: u8) {
+    fn set(&mut self, x: u8, y: u8, val: u8) {
         if val == 0x1 {
-            self.pixels[y as usize] |= 1 << (x % graphics::WIDTH as u8);
+            self.0[y as usize] |= 1 << (x % graphics::WIDTH as u8);
         }
         else {
-            self.pixels[y as usize] &= !(1 << (x % graphics::WIDTH as u8));
+            self.0[y as usize] &= !(1 << (x % graphics::WIDTH as u8));
         }
     }
 }

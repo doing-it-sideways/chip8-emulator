@@ -210,10 +210,10 @@ impl Chip8 {
             let x = x + i % SPRITE_WIDTH;
             let y = y + i / SPRITE_WIDTH;
 
-            let old_val = self.get_pixel(x, y);
+            let old_val = self.pixels.get(x, y);
             let new_val = old_val ^ self.ram[(start + i as u16) as usize];
 
-            self.set_pixel(x, y, new_val);
+            self.pixels.set(x, y, new_val);
             if old_val == 1 && new_val == 0 {
                 unset = true;
             }
@@ -296,7 +296,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             v[0xF] = v[y as usize] & 1;
             v[x as usize] = v[y as usize] >> 1;
         },
-        ClearScreen => state.pixels = [0; 0x20],
+        ClearScreen => state.pixels = Default::default(),
         GenRandom(reg, num) => v[reg as usize] = Chip8::rand_mask(num),
         Draw(x, y, num) => state.set_pixels(x, y, num),
         WaitKey(reg) => {
