@@ -9,7 +9,7 @@ use sdl3::{
     render::{
         Texture,
         TextureAccess,
-    }, video::WindowFlags
+    },
 };
 
 use super::ProgramStatus;
@@ -36,7 +36,7 @@ impl GraphicsCtx {
             .position_centered()
             .build()?;
 
-        let mut canvas  = window.into_canvas();
+        let canvas  = window.into_canvas();
 
         let event_pump = ctx.event_pump()?;
 
