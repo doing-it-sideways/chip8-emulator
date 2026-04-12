@@ -40,7 +40,7 @@ impl GraphicsCtx {
 
         let event_pump = ctx.event_pump()?;
 
-        let screen_tex = canvas.texture_creator().create_texture(PixelFormat::RGB24, 
+        let screen_tex = canvas.texture_creator().create_texture(PixelFormat::RGBA8888, 
                                                               TextureAccess::Streaming,
                                                               WIDTH, HEIGHT)?;
     
@@ -66,7 +66,7 @@ impl GraphicsCtx {
             }
         }
 
-        self.screen_tex.update(None, &self.pixel_buf, WIDTH as usize)?;
+        self.screen_tex.update(None, &self.pixel_buf, 4 * WIDTH as usize)?;
         self.canvas.copy(&self.screen_tex, None, None)?;
 
         // TODO: move to input
