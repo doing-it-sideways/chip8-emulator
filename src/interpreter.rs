@@ -69,6 +69,20 @@ struct Chip8 {
 #[derive(Default, Debug)]
 struct PixelBits([u64; 0x20]);
 
+impl fmt::Display for PixelBits {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[\n")?;
+        for y in 0..graphics::HEIGHT {
+            write!(f, "[")?;
+            for x in 0..graphics::WIDTH {
+                write!(f, "{}, ", (self.0[y as usize] >> x) & 1)?;
+            }
+            write!(f, "]\n")?;
+        }
+        write!(f, "]")
+    }
+}
+
 pub enum ProgramStatus {
     Ok,
     Quit,
