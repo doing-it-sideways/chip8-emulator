@@ -5,11 +5,15 @@ use std::{
 use sdl3::{ 
     event::Event, // TODO: move to input
     keyboard::Keycode, // TODO: move to input
-    pixels::{Color, PixelFormat},
+    pixels::PixelFormat,
     render::{
         Texture,
         TextureAccess,
     },
+    sys::{
+        render,
+        surface,
+    }
 };
 
 use super::ProgramStatus;
@@ -43,6 +47,7 @@ impl GraphicsCtx {
         let screen_tex = canvas.texture_creator().create_texture(PixelFormat::RGBA8888, 
                                                               TextureAccess::Streaming,
                                                               WIDTH, HEIGHT)?;
+        unsafe { render::SDL_SetTextureScaleMode(screen_tex.raw(), surface::SDL_SCALEMODE_NEAREST); }
     
         Ok(GraphicsCtx {
             canvas,
