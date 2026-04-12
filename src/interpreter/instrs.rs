@@ -204,22 +204,38 @@ impl Chip8 {
         let x = self.reg.v[x as usize];
         let y = self.reg.v[y as usize];
         let start: u16 = self.reg.i.into();
-        let mut unset = false;
+        let mut flipped = false;
         
-        for i in 0..bytes {
-            let x = x + i % SPRITE_WIDTH;
-            let y = y + i / SPRITE_WIDTH;
+        for y_line in 0..bytes {
+            // thank you @aquova on github
+            let addr: u16 = Into::<u16>::into(self.reg.i) + y_line as u16;
+            let pixels = self.ram[addr as usize];
 
-            let old_val = self.pixels.get(x, y);
-            let new_val = old_val ^ self.ram[(start + i as u16) as usize];
+            for x_line in 0..8 {
+                if (pixels & (0b1000_0000 >> x_line)) != 0 {
+                    let x = (x + x_line) % WIDTH as u8;
+                    let y = (y + y_line) % HEIGHT as u8;
 
-            self.pixels.set(x, y, new_val);
-            if old_val == 1 && new_val == 0 {
-                unset = true;
+                    let old_val = self.pixels.get(x, y);
+                    flipped |= old_val == 1;
+                    self.pixels.set(x, y, old_val ^ 1);
+                }
             }
+
+            // this code was broken
+            // let x = x + i % SPRITE_WIDTH;
+            // let y = y + i / SPRITE_WIDTH;
+
+            // let old_val = self.pixels.get(x, y);
+            // let new_val = old_val ^ self.ram[(start + i as u16) as usize];
+
+            // self.pixels.set(x, y, new_val);
+            // if old_val == 1 && new_val == 0 {
+            //     unset = true;
+            // }
         }
 
-        if unset {
+        if flipped {
             self.reg.v[0xF] = 0x1;
         }
         else {
