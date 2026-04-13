@@ -279,7 +279,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         SkipEqNum(reg, num) => if v[reg as usize] == num { state.skip()? },
         SkipNotEqNum(reg, num) => if v[reg as usize] != num { state.skip()? },
         SkipEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip()? },
-        SkipNotEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip()? },
+        SkipNotEqReg(x, y) => if v[x as usize] != v[y as usize] { state.skip()? },
         SkipKeyPressed(reg) => if state.is_key_reg_pressed(reg as usize) { state.skip()? },
         SkipKeyNotPressed(reg) => if !state.is_key_reg_pressed(reg as usize) { state.skip()? },
         add_reg(x, y) => {
