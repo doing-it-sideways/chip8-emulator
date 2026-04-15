@@ -24,7 +24,6 @@ pub const HEIGHT: u32 = 32;
 pub struct GraphicsCtx {
     canvas: sdl3::render::WindowCanvas,
     screen_tex: sdl3::render::Texture,
-    event_pump: sdl3::EventPump,
     pixel_buf: [u8; (WIDTH * HEIGHT * 4) as usize]
 }
 
@@ -42,8 +41,6 @@ impl GraphicsCtx {
 
         let canvas  = window.into_canvas();
 
-        let event_pump = ctx.event_pump()?;
-
         let screen_tex = canvas.texture_creator().create_texture(PixelFormat::RGBA8888, 
                                                               TextureAccess::Streaming,
                                                               WIDTH, HEIGHT)?;
@@ -52,7 +49,6 @@ impl GraphicsCtx {
         Ok(GraphicsCtx {
             canvas,
             screen_tex,
-            event_pump,
             pixel_buf: [0u8; (WIDTH * HEIGHT * 4) as usize],
         })
     }
@@ -73,16 +69,6 @@ impl GraphicsCtx {
 
         self.screen_tex.update(None, &self.pixel_buf, 4 * WIDTH as usize)?;
         self.canvas.copy(&self.screen_tex, None, None)?;
-
-        // TODO: move to input
-        for event in self.event_pump.poll_iter() {
-            match event {
-                Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    return Ok(ProgramStatus::Quit);
-                },
-                _ => {}
-            }
-        }
 
         self.canvas.present();
 
