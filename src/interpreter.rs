@@ -92,10 +92,17 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<ProgramStatus, Box<dyn
     let mut chip8 = Chip8::new(rom_data);
     
     let sdl_ctx = sdl3::init()?;
+    let mut event_pump = sdl_ctx.event_pump()?;
     let mut gctx = graphics::GraphicsCtx::init(&sdl_ctx, window_scale)?;
 
     'runloop: loop {
         // TODO: input
+        // TODO: timers
+
+        match input::update(&mut event_pump) {
+            (new_input, ProgramStatus::Ok) => chip8.input = new_input,
+            (_, ProgramStatus::Quit) => break 'runloop,
+        };
         
         let instr = chip8.fetch();
         let cur_instr = instrs::decode(instr)?;
@@ -103,7 +110,7 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<ProgramStatus, Box<dyn
 
         instrs::exec(&mut chip8, cur_instr)?;
 
-        if let Ok(ProgramStatus::Quit) = gctx.draw(&chip8.pixels) {
+        if let ProgramStatus::Quit = gctx.draw(&chip8.pixels)? {
             break 'runloop;
         }
 
