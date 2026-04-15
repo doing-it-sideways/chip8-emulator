@@ -1,12 +1,10 @@
 use super::{ 
     Chip8,
     Address,
-    error::InterpreterErr
-};
-
-use crate::interpreter::{
+    error::InterpreterErr,
     PC_MAX,
-    graphics::{ WIDTH, HEIGHT }
+    graphics::{ WIDTH, HEIGHT },
+    InterpreterMode,
 };
 
 #[derive(Debug, Copy, Clone)]
@@ -251,11 +249,21 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         nop => (),
         call_mchn(_) => (), // only used on real hardware
         jmp(addr) => regs.pc = addr.into(),
-        jr(addr) => regs.pc = v[0] as u16 + Into::<u16>::into(addr),
+        jr(addr) => {
+            // incorrect behavior but this is how SUPER-CHIP implemented it
+            if state.chip_behavior == InterpreterMode::SUPERCHIP {
+                let x: u16 = (addr.0 & 0x0F00) >> 8;
+                regs.pc = addr.0 + v[x as usize] as u16;
+            }
+            // correct behavior
+            else {
+                regs.pc = addr.0 + v[0] as u16;
+            }
+        },
         call(addr) => {
             let old_addr = state.reg.pc.into();
             state.push_addr(old_addr);
-            state.reg.pc = addr.into()
+            state.reg.pc = addr.into();
         },
         ret => state.reg.pc = state.pop_addr()?.into(),
         ld_reg(x, y) => v[x as usize] = v[y as usize],
@@ -269,11 +277,21 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             let reg = reg as usize;
             let i = regs.i.0 as usize;
             state.ram[i..=(i + reg)].copy_from_slice(&v[0..=reg]);
+
+            // COSMAC would increment i reg not just store in temp var
+            if state.chip_behavior == InterpreterMode::COSMAC {
+                regs.i.0 += reg as u16 + 1;
+            }
         },
         ld_regs_i(reg) => {
             let reg = reg as usize;
             let i = regs.i.0 as usize;
-            v[0..=reg].copy_from_slice(&state.ram[i..=(i + reg)])
+            v[0..=reg].copy_from_slice(&state.ram[i..=(i + reg)]);
+
+            // COSMAC would increment i reg not just store in temp var
+            if state.chip_behavior == InterpreterMode::COSMAC {
+                regs.i.0 += reg as u16 + 1;
+            }
         },
         ld_i_font(reg) => regs.i = ((v[reg as usize] as u16) * 5).into(), // from aquova tutorial -> stored font in beginning of ram
         SkipEqNum(reg, num) => if v[reg as usize] == num { state.skip()? },
@@ -303,12 +321,24 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         and(x, y) => v[x as usize] &= v[y as usize],
         xor(x, y) => v[x as usize] ^= v[y as usize],
         lsl(x, y) => {
-            v[0xF] = v[y as usize] >> 7;
-            v[x as usize] = v[y as usize] << 1;
+            if state.chip_behavior >= InterpreterMode::SUPERCHIP {
+                v[0xF] = v[x as usize] >> 7;
+                v[x as usize] <<= 1;
+            }
+            else {
+                v[0xF] = v[y as usize] >> 7;
+                v[x as usize] = v[y as usize] << 1;
+            }
         },
         lsr(x, y) => {
-            v[0xF] = v[y as usize] & 1;
-            v[x as usize] = v[y as usize] >> 1;
+            if state.chip_behavior >= InterpreterMode::SUPERCHIP {
+                v[0xF] = v[x as usize] & 1;
+                v[x as usize] >>= 1;
+            }
+            else {
+                v[0xF] = v[y as usize] & 1;
+                v[x as usize] = v[y as usize] >> 1;
+            }
         },
         ClearScreen => state.pixels = Default::default(),
         GenRandom(reg, num) => v[reg as usize] = Chip8::rand_mask(num),

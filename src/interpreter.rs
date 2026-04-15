@@ -13,6 +13,17 @@ mod input;
 
 use error::InterpreterErr;
 
+#[derive(clap::ValueEnum, Default, Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub enum InterpreterMode {
+    /// Original Chip-8 behavior on the COSMAC-VIP
+    COSMAC,
+    /// Behavior of the Chip-8 on the CHIP-48 / SUPER-CHIP
+    SUPERCHIP,
+    /// Same as SUPER-CHIP and enables instructions from the Octo extensions
+    #[default]
+    Octo,
+}
+
 #[derive(PartialEq, PartialOrd, Default, Copy, Clone)]
 struct Address(u16);
 
@@ -64,32 +75,22 @@ struct Chip8 {
 
     timer_delay: u8,
     timer_sound: u8,
+
+    chip_behavior: InterpreterMode,
 }
 
 #[derive(Default, Debug)]
 struct PixelBits([u64; 0x20]);
-
-impl fmt::Display for PixelBits {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[\n")?;
-        for y in 0..graphics::HEIGHT {
-            write!(f, "[")?;
-            for x in 0..graphics::WIDTH {
-                write!(f, "{}, ", (self.0[y as usize] >> x) & 1)?;
-            }
-            write!(f, "]\n")?;
-        }
-        write!(f, "]")
-    }
-}
 
 pub enum ProgramStatus {
     Ok,
     Quit,
 }
 
-pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<ProgramStatus, Box<dyn Error>> {
-    let mut chip8 = Chip8::new(rom_data);
+pub fn run(rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode) -> 
+    Result<ProgramStatus, Box<dyn Error>>
+{
+    let mut chip8 = Chip8::new(rom_data, chip_behavior);
     
     let sdl_ctx = sdl3::init()?;
     let mut event_pump = sdl_ctx.event_pump()?;
@@ -122,7 +123,7 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8) -> Result<ProgramStatus, Box<dyn
 
 /// General functions
 impl Chip8 {
-    fn new(rom_data: Vec<u8>) -> Self {
+    fn new(rom_data: Vec<u8>, chip_behavior: InterpreterMode) -> Self {
         assert!(rom_data.len() <= RAM_DEFAULT_SIZE - ROM_START);
 
         let mut chip8 = Chip8 {
@@ -131,6 +132,7 @@ impl Chip8 {
                 pc: PC_INIT,
                 ..Registers::default()
             },
+            chip_behavior,
             ..Chip8::default()
         };
 
@@ -184,5 +186,19 @@ impl PixelBits {
         else {
             self.0[y as usize] &= !(1 << (x % graphics::WIDTH as u8));
         }
+    }
+}
+
+impl fmt::Display for PixelBits {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[\n")?;
+        for y in 0..graphics::HEIGHT {
+            write!(f, "[")?;
+            for x in 0..graphics::WIDTH {
+                write!(f, "{}, ", (self.0[y as usize] >> x) & 1)?;
+            }
+            write!(f, "]\n")?;
+        }
+        write!(f, "]")
     }
 }
