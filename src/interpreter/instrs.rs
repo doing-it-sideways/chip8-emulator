@@ -317,9 +317,27 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             (v[x as usize], carry) = v[y as usize].overflowing_sub(v[x as usize]);
             v[0xF] = if carry { 0x0 } else { 0x1 };
         },
-        or(x, y) => v[x as usize] |= v[y as usize],
-        and(x, y) => v[x as usize] &= v[y as usize],
-        xor(x, y) => v[x as usize] ^= v[y as usize],
+        or(x, y) => {
+            v[x as usize] |= v[y as usize];
+
+            if state.chip_behavior == InterpreterMode::COSMAC {
+                v[0xF] = 0;
+            }
+        },
+        and(x, y) => {
+            v[x as usize] &= v[y as usize];
+
+            if state.chip_behavior == InterpreterMode::COSMAC {
+                v[0xF] = 0;
+            }
+        },
+        xor(x, y) => {
+            v[x as usize] ^= v[y as usize];
+
+            if state.chip_behavior == InterpreterMode::COSMAC {
+                v[0xF] = 0;
+            }
+        },
         lsl(x, y) => {
             if state.chip_behavior >= InterpreterMode::SUPERCHIP {
                 v[0xF] = v[x as usize] >> 7;
