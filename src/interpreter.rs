@@ -54,6 +54,9 @@ struct Registers {
     sp: u16,
 }
 
+#[derive(Default, Debug)]
+struct PixelBits([u64; 0x20]);
+
 const ROM_START: usize = 0x200;
 const PC_INIT: u16 = ROM_START as u16;
 const PC_MAX: u16 = 0xE8F;
@@ -79,9 +82,6 @@ struct Chip8 {
     chip_behavior: InterpreterMode,
 }
 
-#[derive(Default, Debug)]
-struct PixelBits([u64; 0x20]);
-
 pub enum ProgramStatus {
     Ok,
     Quit,
@@ -97,19 +97,31 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode) 
     let mut gctx = graphics::GraphicsCtx::init(&sdl_ctx, window_scale)?;
 
     'runloop: loop {
-        // TODO: input
-        // TODO: timers
-
         match input::update(&mut event_pump) {
             (new_input, ProgramStatus::Ok) => chip8.input = new_input,
             (_, ProgramStatus::Quit) => break 'runloop,
         };
         
+        for _ in 0..10 {
         let instr = chip8.fetch();
         let cur_instr = instrs::decode(instr)?;
         println!("Cur instruction (0x{:04X}): {:?}", instr, cur_instr);
 
         instrs::exec(&mut chip8, cur_instr)?;
+        }
+
+        if let Some(val) = chip8.timer_delay.checked_sub(1) {
+            chip8.timer_delay = val;
+        }
+
+        if chip8.timer_sound > 0 {
+            // cosmac only played sounds on values > 1
+            if chip8.chip_behavior >= InterpreterMode::SUPERCHIP || chip8.timer_sound > 1 {
+                // TODO: play sound
+            }
+            
+            chip8.timer_sound -= 1;
+        }
 
         if let ProgramStatus::Quit = gctx.draw(&chip8.pixels)? {
             break 'runloop;
