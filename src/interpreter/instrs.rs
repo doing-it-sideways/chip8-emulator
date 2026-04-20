@@ -198,8 +198,8 @@ impl Chip8 {
         // sprites always 8 pixels wide, height ranging from 1-15 pixels
         assert!(bytes <= 8 * 15);
 
-        let x = self.reg.v[x as usize];
-        let y = self.reg.v[y as usize];
+        let x = self.reg.v[x as usize] % WIDTH as u8;
+        let y = self.reg.v[y as usize] % HEIGHT as u8;
         let mut flipped = false;
         
         for y_line in 0..bytes {
@@ -207,7 +207,17 @@ impl Chip8 {
             let addr: u16 = Into::<u16>::into(self.reg.i) + y_line as u16;
             let pixels = self.ram[addr as usize];
 
+            // sprites clip
+            if self.chip_behavior == InterpreterMode::COSMAC && y + y_line >= HEIGHT as u8 {
+                break;
+            }
+
             for x_line in 0..8 {
+                // sprites clip
+                if self.chip_behavior == InterpreterMode::COSMAC && x + x_line >= WIDTH as u8 {
+                    break;
+                }
+
                 if (pixels & (0b1000_0000 >> x_line)) != 0 {
                     let x = (x + x_line) % WIDTH as u8;
                     let y = (y + y_line) % HEIGHT as u8;
