@@ -103,11 +103,11 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode) 
         };
         
         for _ in 0..10 {
-        let instr = chip8.fetch();
-        let cur_instr = instrs::decode(instr)?;
-        println!("Cur instruction (0x{:04X}): {:?}", instr, cur_instr);
+            let instr = chip8.fetch();
+            let cur_instr = instrs::decode(instr)?;
+            println!("Cur instruction (0x{:04X}): {:?}", instr, cur_instr);
 
-        instrs::exec(&mut chip8, cur_instr)?;
+            instrs::exec(&mut chip8, cur_instr)?;
         }
 
         if let Some(val) = chip8.timer_delay.checked_sub(1) {

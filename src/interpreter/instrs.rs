@@ -340,11 +340,11 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         },
         lsl(x, y) => {
             if state.chip_behavior >= InterpreterMode::SUPERCHIP {
-                v[0xF] = v[x as usize] >> 7;
+                v[0xF] = (v[x as usize] & 0b1000_0000) >> 7;
                 v[x as usize] <<= 1;
             }
             else {
-                v[0xF] = v[y as usize] >> 7;
+                v[0xF] = (v[y as usize] & 0b1000_0000) >> 7;
                 v[x as usize] = v[y as usize] << 1;
             }
         },
