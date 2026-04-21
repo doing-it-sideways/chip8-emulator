@@ -382,6 +382,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
                     if state.is_key_pressed(key) {
                         let v = &mut state.reg.v; // what great borrowing rules, i hate this.
                         v[reg as usize] = key;
+                        break;
                     }
                 }
             }

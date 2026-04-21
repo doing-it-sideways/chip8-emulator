@@ -97,13 +97,13 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode) 
     let mut event_pump = sdl_ctx.event_pump()?;
     let mut gctx = graphics::GraphicsCtx::init(&sdl_ctx, window_scale)?;
 
-    'runloop: loop {
-        let input_res = input::update(&mut event_pump, &mut chip8.input);
-        if input_res == ProgramStatus::Quit {
-            break 'runloop;
-        }
-        
+    'runloop: loop {        
         for _ in 0..10 {
+            let input_res = input::update(&mut event_pump, &mut chip8.input);
+            if input_res == ProgramStatus::Quit {
+                break 'runloop;
+            }
+
             let instr = chip8.fetch();
             let cur_instr = instrs::decode(instr)?;
             println!("Cur instruction (0x{:04X}): {:?}", instr, cur_instr);
