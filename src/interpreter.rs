@@ -82,6 +82,7 @@ struct Chip8 {
     chip_behavior: InterpreterMode,
 }
 
+#[derive(PartialEq)]
 pub enum ProgramStatus {
     Ok,
     Quit,
@@ -97,10 +98,10 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode) 
     let mut gctx = graphics::GraphicsCtx::init(&sdl_ctx, window_scale)?;
 
     'runloop: loop {
-        match input::update(&mut event_pump) {
-            (new_input, ProgramStatus::Ok) => chip8.input = new_input,
-            (_, ProgramStatus::Quit) => break 'runloop,
-        };
+        let input_res = input::update(&mut event_pump, &mut chip8.input);
+        if input_res == ProgramStatus::Quit {
+            break 'runloop;
+        }
         
         for _ in 0..10 {
             let instr = chip8.fetch();

@@ -195,9 +195,10 @@ impl Chip8 {
     }
 
     fn set_pixels(&mut self, x: u8, y: u8, bytes: u8) {
-        if self.chip_behavior == InterpreterMode::COSMAC && self.timer_delay != 0 {
-            // TODO: simulate waiting for vblank interrupt
-        }
+        // TODO: simulate waiting for vblank interrupt
+        // if self.chip_behavior == InterpreterMode::COSMAC && true {
+            
+        // }
 
         // sprites always 8 pixels wide, height ranging from 1-15 pixels
         assert!(bytes <= 8 * 15);
