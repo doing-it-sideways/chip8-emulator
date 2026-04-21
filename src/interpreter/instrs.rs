@@ -63,13 +63,22 @@ pub enum Instruction {
     nop,                    // 0000
     #[allow(unused)]
     call_mchn(Address),     // 0NNN -- this instruction is treated as a nop
+    s_scd(u8),              // 00CN -- SUPER-CHIP+
+    o_scu(u8),              // 00DN -- Octo+
     ClearScreen,            // 00E0
     ret,                    // 00EE
+    s_scr,                  // 00FB -- SUPER-CHIP+
+    s_scl,                  // 00FC -- SUPER-CHIP+
+    s_exit,                 // 00FD -- SUPER-CHIP+
+    s_lores,                // 00FE -- SUPER-CHIP+
+    s_hires,                // 00FF -- SUPER-CHIP+
     jmp(Address),           // 1NNN
     call(Address),          // 2NNN
     SkipEqNum(Reg, u8),     // 3XNN
     SkipNotEqNum(Reg, u8),  // 4XNN
     SkipEqReg(Reg, Reg),    // 5XY0
+    o_ld_regxy_i(Reg, Reg), // 5XY2 -- Octo+
+    o_ld_i_regxy(Reg, Reg), // 5XY3 -- Octo+
     ld_nn(Reg, u8),         // 6XNN
     add_nn(Reg, u8),        // 7XNN
     ld_reg(Reg, Reg),       // 8XY0
@@ -83,20 +92,28 @@ pub enum Instruction {
     lsl(Reg, Reg),          // 8XYE
     SkipNotEqReg(Reg, Reg), // 9XY0
     ld_i(Address),          // ANNN
-    jr(Address),            // BNNN
+    jr(Address),            // BNNN -- Different behavior on SUPER-CHIP
     GenRandom(Reg, u8),     // CXNN
+    s_Draw16x16(Reg, Reg),  // DXY0 -- SUPER-CHIP+
     Draw(Reg, Reg, u8),     // DXYN
     SkipKeyPressed(Reg),    // EX9E
     SkipKeyNotPressed(Reg), // EXA1
+    o_ld_ipc_nnnn,          // F000 -- Octo+
+    o_Plane(Reg),           // FX01 -- Octo+
+    o_ld_audio_i,           // F002 -- Octo+
     ld_reg_delay(Reg),      // FX07
     WaitKey(Reg),           // FX0A
     ld_delay_reg(Reg),      // FX15
     ld_sound_reg(Reg),      // FX18
     add_pc(Reg),            // FX1E
     ld_i_font(Reg),         // FX29
+    s_ld_i_font10(Reg),     // FX30 -- SUPER-CHIP+
     ld_i_bcd(Reg),          // FX33
+    o_SetPitch(Reg),        // FX3A -- Octo+
     ld_i_regs(Reg),         // FX55
-    ld_regs_i(Reg)          // FX65
+    ld_regs_i(Reg),         // FX65
+    s_ld_flags_regs(Reg),   // FX75 -- SUPER-CHIP+
+    s_ld_regs_flags(Reg),   // FX85 -- SUPER-CHIP+
 }
 
 pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
@@ -107,8 +124,15 @@ pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
     let instr = match op_code.into() {
         (0, x, y, z) => match (x, y, z) {
             (0, 0, 0) => nop,
+            (0, 0xC, n) => s_scd(n),
+            (0, 0xD, n) => o_scu(n),
             (0, 0xE, 0) => ClearScreen,
             (0, 0xE, 0xE) => ret,
+            (0, 0xF, 0xB) => s_scr,
+            (0, 0xF, 0xC) => s_scl,
+            (0, 0xF, 0xD) => s_exit,
+            (0, 0xF, 0xE) => s_lores,
+            (0, 0xF, 0xF) => s_hires,
             _ => call_mchn(op_code.into()),
         },
         (1, _, _, _) => jmp(op_code.into()),
@@ -116,6 +140,8 @@ pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
         (3, x, _, _) => SkipEqNum(x, op_code.nn()),
         (4, x, _, _) => SkipNotEqNum(x, op_code.nn()),
         (5, x, y, 0) => SkipEqReg(x, y),
+        (5, x, y, 2) => o_ld_regxy_i(x, y),
+        (5, x, y, 3) => o_ld_i_regxy(x, y),
         (6, x, _, _) => ld_nn(x, op_code.nn()),
         (7, x, _, _) => add_nn(x, op_code.nn()),
         (8, x, y, instr) => match instr {
@@ -134,19 +160,27 @@ pub fn decode(instr: u16) -> Result<Instruction, InterpreterErr> {
         (0xA, _, _, _) => ld_i(op_code.into()),
         (0xB, _, _, _) => jr(op_code.into()),
         (0xC, x, _, _) => GenRandom(x, op_code.nn()),
+        (0xD, x, y, 0) => s_Draw16x16(x, y),
         (0xD, x, y, n) => Draw(x, y, n),
         (0xE, x, 9, 0xE) => SkipKeyPressed(x),
         (0xE, x, 0xA, 1) => SkipKeyNotPressed(x),
+        (0xF, 0, 0, 0) => o_ld_ipc_nnnn,
+        (0xF, 0, 0, 2) => o_ld_audio_i,
         (0xF, x, _, _) => match op_code.nn() {
+            0x01 => o_Plane(x),
             0x07 => ld_reg_delay(x),
             0x0A => WaitKey(x),
             0x15 => ld_delay_reg(x),
             0x18 => ld_sound_reg(x),
             0x1E => add_pc(x),
             0x29 => ld_i_font(x),
+            0x30 => s_ld_i_font10(x),
             0x33 => ld_i_bcd(x),
+            0x3A => o_SetPitch(x),
             0x55 => ld_i_regs(x),
             0x65 => ld_regs_i(x),
+            0x75 => s_ld_flags_regs(x),
+            0x85 => s_ld_regs_flags(x),
             _ => return Err(InterpreterErr::InvalidInstr),
         },
         _ => return Err(InterpreterErr::InvalidInstr),
@@ -257,6 +291,7 @@ impl Chip8 {
 
 pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr> {
     use Instruction::*;
+    use InterpreterMode::*;
     let regs = &mut state.reg;
     let v = &mut regs.v;
     
@@ -266,7 +301,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         jmp(addr) => regs.pc = addr.into(),
         jr(addr) => {
             // incorrect behavior but this is how SUPER-CHIP implemented it
-            if state.chip_behavior == InterpreterMode::SUPERCHIP {
+            if state.chip_behavior == SUPERCHIP {
                 let x: u16 = (addr.0 & 0x0F00) >> 8;
                 regs.pc = addr.0 + v[x as usize] as u16;
             }
@@ -294,7 +329,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             state.ram[i..=(i + reg)].copy_from_slice(&v[0..=reg]);
 
             // COSMAC would increment i reg not just store in temp var
-            if state.chip_behavior == InterpreterMode::COSMAC {
+            if state.chip_behavior == COSMAC {
                 regs.i.0 += reg as u16 + 1;
             }
         },
@@ -304,7 +339,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             v[0..=reg].copy_from_slice(&state.ram[i..=(i + reg)]);
 
             // COSMAC would increment i reg not just store in temp var
-            if state.chip_behavior == InterpreterMode::COSMAC {
+            if state.chip_behavior == COSMAC {
                 regs.i.0 += reg as u16 + 1;
             }
         },
@@ -335,26 +370,26 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         or(x, y) => {
             v[x as usize] |= v[y as usize];
 
-            if state.chip_behavior == InterpreterMode::COSMAC {
+            if state.chip_behavior == COSMAC {
                 v[0xF] = 0;
             }
         },
         and(x, y) => {
             v[x as usize] &= v[y as usize];
 
-            if state.chip_behavior == InterpreterMode::COSMAC {
+            if state.chip_behavior == COSMAC {
                 v[0xF] = 0;
             }
         },
         xor(x, y) => {
             v[x as usize] ^= v[y as usize];
 
-            if state.chip_behavior == InterpreterMode::COSMAC {
+            if state.chip_behavior == COSMAC {
                 v[0xF] = 0;
             }
         },
         lsl(x, y) => {
-            if state.chip_behavior >= InterpreterMode::SUPERCHIP {
+            if state.chip_behavior >= SUPERCHIP {
                 v[0xF] = (v[x as usize] & 0b1000_0000) >> 7;
                 v[x as usize] <<= 1;
             }
@@ -364,7 +399,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             }
         },
         lsr(x, y) => {
-            if state.chip_behavior >= InterpreterMode::SUPERCHIP {
+            if state.chip_behavior >= SUPERCHIP {
                 v[0xF] = v[x as usize] & 1;
                 v[x as usize] >>= 1;
             }
@@ -390,6 +425,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
                 state.reg.pc -= 2
             }
         },
+        _ => todo!()
     }
 
     Ok(())
