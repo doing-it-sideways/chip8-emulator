@@ -208,7 +208,7 @@ impl Chip8 {
 
     fn store_bcd(&mut self, reg: usize) {
         let mut val = self.reg.v[reg];
-        let i = self.reg.i.0 as usize;
+        let i = Into::<u16>::into(self.reg.i) as usize;
 
         self.ram[i + 2] = val % 10;
         val /= 10;
@@ -306,12 +306,14 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         jr(addr) => {
             // incorrect behavior but this is how SUPER-CHIP implemented it
             if state.chip_behavior == SUPERCHIP {
-                let x: u16 = (addr.0 & 0x0F00) >> 8;
-                regs.pc = addr.0 + v[x as usize] as u16;
+                let addr: u16 = addr.into();
+                let x: u16 = (addr & 0x0F00) >> 8;
+                regs.pc = addr + v[x as usize] as u16;
             }
             // correct behavior
             else {
-                regs.pc = addr.0 + v[0] as u16;
+                let addr: u16 = addr.into();
+                regs.pc = addr + v[0] as u16;
             }
         },
         call(addr) => {
@@ -342,7 +344,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         ld_i_bcd(reg) => state.store_bcd(reg as usize),
         ld_i_regs(reg) => {
             let reg = reg as usize;
-            let i = regs.i.0 as usize;
+            let i = Into::<u16>::into(regs.i) as usize;
             state.ram[i..=(i + reg)].copy_from_slice(&v[0..=reg]);
 
             // COSMAC would increment i reg not just store in temp var
@@ -352,7 +354,7 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
         },
         ld_regs_i(reg) => {
             let reg = reg as usize;
-            let i = regs.i.0 as usize;
+            let i = Into::<u16>::into(regs.i) as usize;
             v[0..=reg].copy_from_slice(&state.ram[i..=(i + reg)]);
 
             // COSMAC would increment i reg not just store in temp var

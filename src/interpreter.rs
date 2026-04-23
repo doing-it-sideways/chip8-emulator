@@ -35,7 +35,7 @@ impl From<u16> for Address {
 
 impl From<Address> for u16 {
     fn from(addr: Address) -> Self {
-        addr.0
+        addr.0 & 0x0FFF
     }
 }
 
