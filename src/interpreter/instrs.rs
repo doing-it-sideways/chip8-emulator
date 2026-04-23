@@ -292,12 +292,16 @@ impl Chip8 {
 pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr> {
     use Instruction::*;
     use InterpreterMode::*;
+    use InterpreterErr::*;
+
     let regs = &mut state.reg;
     let v = &mut regs.v;
     
     match instr {
         nop => (),
         call_mchn(_) => (), // only used on real hardware
+        s_lores => if state.chip_behavior >= SUPERCHIP { },
+        s_hires => if state.chip_behavior >= SUPERCHIP { },
         jmp(addr) => regs.pc = addr.into(),
         jr(addr) => {
             // incorrect behavior but this is how SUPER-CHIP implemented it
@@ -316,12 +320,25 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             state.reg.pc = addr.into();
         },
         ret => state.reg.pc = state.pop_addr()?.into(),
+        s_exit => if state.chip_behavior >= SUPERCHIP { },
         ld_reg(x, y) => v[x as usize] = v[y as usize],
         ld_nn(reg, num) => v[reg as usize] = num,
-        ld_i(addr) => regs.i = addr,
         ld_reg_delay(reg) => v[reg as usize] = state.timer_delay,
         ld_delay_reg(reg) => state.timer_delay = v[reg as usize],
         ld_sound_reg(reg) => state.timer_sound = v[reg as usize],
+        s_ld_regs_flags(reg) => {
+            if state.chip_behavior >= SUPERCHIP { }
+            else { return Err(InvalidInstr); }
+        },
+        s_ld_flags_regs(reg) => {
+            if state.chip_behavior >= SUPERCHIP { }
+            else { return Err(InvalidInstr); }
+        },
+        ld_i(addr) => regs.i = addr,
+        o_ld_ipc_nnnn => {
+            if state.chip_behavior >= Octo { }
+            else { return Err(InvalidInstr); }
+        },
         ld_i_bcd(reg) => state.store_bcd(reg as usize),
         ld_i_regs(reg) => {
             let reg = reg as usize;
@@ -343,7 +360,23 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
                 regs.i.0 += reg as u16 + 1;
             }
         },
+        o_ld_regxy_i(x, y) => {
+            if state.chip_behavior >= Octo { }
+            else { return Err(InvalidInstr); }
+        },
+        o_ld_i_regxy(x, y) => {
+            if state.chip_behavior >= Octo { }
+            else { return Err(InvalidInstr); } 
+        },
         ld_i_font(reg) => regs.i = ((v[reg as usize] as u16) * 5).into(), // from aquova tutorial -> stored font in beginning of ram
+        s_ld_i_font10(reg) => {
+            if state.chip_behavior >= SUPERCHIP { }
+            else { return Err(InvalidInstr); }
+        },
+        o_ld_audio_i => {
+            if state.chip_behavior >= Octo { }
+            else { return Err(InvalidInstr); }
+        },
         SkipEqNum(reg, num) => if v[reg as usize] == num { state.skip()? },
         SkipNotEqNum(reg, num) => if v[reg as usize] != num { state.skip()? },
         SkipEqReg(x, y) => if v[x as usize] == v[y as usize] { state.skip()? },
@@ -408,9 +441,25 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
                 v[x as usize] = v[y as usize] >> 1;
             }
         },
-        ClearScreen => state.pixels = Default::default(),
         GenRandom(reg, num) => v[reg as usize] = Chip8::rand_mask(num),
+        ClearScreen => state.pixels = Default::default(),
+        s_scd(num) => if state.chip_behavior >= SUPERCHIP { },
+        s_scl => if state.chip_behavior >= SUPERCHIP { },
+        s_scr => if state.chip_behavior >= SUPERCHIP { },
+        o_scu(num) => if state.chip_behavior >= Octo { },
+        o_Plane(reg) => {
+            if state.chip_behavior >= Octo { }
+            else { return Err(InvalidInstr); }
+        },
         Draw(x, y, num) => state.set_pixels(x, y, num),
+        s_Draw16x16(x, y) => {
+            if state.chip_behavior >= SUPERCHIP { }
+            else { return Err(InvalidInstr); }
+        },
+        o_SetPitch(reg) => {
+            if state.chip_behavior >= Octo { }
+            else { return Err(InvalidInstr); }
+        },
         WaitKey(reg) => {
             if state.any_key_pressed() {
                 for key in 0..0xF {
@@ -425,7 +474,6 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
                 state.reg.pc -= 2
             }
         },
-        _ => todo!()
     }
 
     Ok(())
