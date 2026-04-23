@@ -75,6 +75,8 @@ struct Chip8 {
     
     reg: Registers,
     input: u16, // bitwise 16 buttons 0 = msb, 0xF = lsb
+    // on the COSMAC, WaitKey needs to wait for a key release, so we must store the key press
+    cosmac_keypress: Option<u8>,
 
     timer_delay: u8,
     timer_sound: u8,
@@ -177,12 +179,6 @@ impl Chip8 {
         else {
             Err(InterpreterErr::StackErr)
         }
-    }
-
-    fn is_key_pressed(&self, key: u8) -> bool {
-        assert!(key <= 0xF);
-
-        (self.input >> key) & 1 == 1
     }
 }
 

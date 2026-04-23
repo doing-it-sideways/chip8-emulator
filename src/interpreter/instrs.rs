@@ -221,6 +221,12 @@ impl Chip8 {
         self.input != 0
     }
 
+    fn is_key_pressed(&self, key: u8) -> bool {
+        assert!(key <= 0xF);
+
+        (self.input >> key) & 1 == 1
+    }
+
     fn is_key_reg_pressed(&self, reg: usize) -> bool {
         let key = self.reg.v[reg];
         assert!(key <= 0xF);
@@ -462,13 +468,26 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             if state.chip_behavior >= Octo { }
             else { return Err(InvalidInstr); }
         },
-        WaitKey(reg) => {
+        WaitKey(reg) => { // TODO: on the COSMAC, the trigger only happens when a key is pressed and released
             if state.any_key_pressed() {
                 for key in 0..0xF {
                     if state.is_key_pressed(key) {
-                        let v = &mut state.reg.v; // what great borrowing rules, i hate this.
-                        v[reg as usize] = key;
+                        if state.chip_behavior == COSMAC && state.cosmac_keypress.is_none() {
+                            state.cosmac_keypress = Some(key);
+                        }
+                        else {
+                            let v = &mut state.reg.v; // what great borrowing rules, i hate this.
+                            v[reg as usize] = key;
+                        }
                         break;
+                    }
+                    // wait for key release on cosmac
+                    else if state.chip_behavior == COSMAC && let Some(key) = state.cosmac_keypress {
+                        if !state.is_key_pressed(key) {
+                            let v = &mut state.reg.v; // what great borrowing rules, i hate this.
+                            v[reg as usize] = key;
+                            state.cosmac_keypress = None;
+                        }
                     }
                 }
             }
