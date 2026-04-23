@@ -376,7 +376,9 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             if state.chip_behavior >= Octo { }
             else { return Err(InvalidInstr); } 
         },
-        ld_i_font(reg) => regs.i = ((v[reg as usize] as u16) * 5).into(), // from aquova tutorial -> stored font in beginning of ram
+        // from aquova tutorial -> stored font in beginning of ram
+        // on COSMAC: only take lower nibble
+        ld_i_font(reg) => regs.i = ((v[reg as usize] as u16 & if state.chip_behavior == COSMAC { 0x0F } else { 0xFF }) * 5).into(),
         s_ld_i_font10(reg) => {
             if state.chip_behavior >= SUPERCHIP { }
             else { return Err(InvalidInstr); }
