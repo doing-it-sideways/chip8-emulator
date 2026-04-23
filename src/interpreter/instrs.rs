@@ -5,12 +5,11 @@ use super::{
     PC_MAX,
     graphics::{ WIDTH, HEIGHT },
     InterpreterMode,
+    Reg,
 };
 
 #[derive(Debug, Copy, Clone)]
 pub struct OpCode(u16);
-
-type Reg = u8;
 
 impl OpCode {
     fn lead_nibble(&self) -> u8 {
@@ -217,11 +216,11 @@ impl Chip8 {
         self.ram[i] = val;
     }
 
-    fn any_key_pressed(&self) -> bool {
+    pub fn any_key_pressed(&self) -> bool {
         self.input != 0
     }
 
-    fn is_key_pressed(&self, key: u8) -> bool {
+    pub fn is_key_pressed(&self, key: u8) -> bool {
         assert!(key <= 0xF);
 
         (self.input >> key) & 1 == 1
@@ -234,7 +233,7 @@ impl Chip8 {
         self.is_key_pressed(key)
     }
 
-    fn set_pixels(&mut self, x: u8, y: u8, bytes: u8) {
+    pub fn set_pixels(&mut self, x: u8, y: u8, bytes: u8) {
         // TODO: simulate waiting for vblank interrupt
         // if self.chip_behavior == InterpreterMode::COSMAC && true {
             
@@ -461,7 +460,16 @@ pub fn exec(state: &mut Chip8, instr: Instruction) -> Result<(), InterpreterErr>
             if state.chip_behavior >= Octo { }
             else { return Err(InvalidInstr); }
         },
-        Draw(x, y, num) => state.set_pixels(x, y, num),
+        Draw(x, y, num) => {
+            // only actually draw every 1/60 seconds / screen-refresh
+            if state.chip_behavior == COSMAC {
+                state.sprite_to_draw = Some((x, y, num));
+                state.reg.pc -= 2;
+            }
+            else {
+                state.set_pixels(x, y, num);
+            }
+        },
         s_Draw16x16(x, y) => {
             if state.chip_behavior >= SUPERCHIP { }
             else { return Err(InvalidInstr); }

@@ -46,9 +46,11 @@ impl fmt::Debug for Address {
     }
 }
 
+type Reg = u8;
+
 #[derive(Default, Debug)]
 struct Registers {
-    v: [u8; 0x10], // 16 general purpose register V0-VF, VF often modified by instructions as a flag register
+    v: [Reg; 0x10], // 16 general purpose register V0-VF, VF often modified by instructions as a flag register
     pc: u16,
     i: Address, // memory address register? related to io for memory
     sp: u16,
@@ -74,6 +76,7 @@ struct Chip8 {
     pixels: PixelBits,
     
     reg: Registers,
+    sprite_to_draw: Option<(Reg, Reg, u8)>,
     input: u16, // bitwise 16 buttons 0 = msb, 0xF = lsb
     // on the COSMAC, WaitKey needs to wait for a key release, so we must store the key press
     cosmac_keypress: Option<u8>,
@@ -113,6 +116,12 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode) 
             instrs::exec(&mut chip8, cur_instr)?;
         }
 
+        if let Some((x, y, num)) = chip8.sprite_to_draw {
+            chip8.set_pixels(x, y, num);
+            chip8.reg.pc += 2;
+            chip8.sprite_to_draw = None;
+        }
+
         if let Some(val) = chip8.timer_delay.checked_sub(1) {
             chip8.timer_delay = val;
         }
@@ -138,7 +147,7 @@ pub fn run(rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode) 
 
 /// General functions
 impl Chip8 {
-    fn new(rom_data: Vec<u8>, chip_behavior: InterpreterMode) -> Self {
+    pub fn new(rom_data: Vec<u8>, chip_behavior: InterpreterMode) -> Self {
         assert!(rom_data.len() <= RAM_DEFAULT_SIZE - ROM_START);
 
         let mut chip8 = Chip8 {
