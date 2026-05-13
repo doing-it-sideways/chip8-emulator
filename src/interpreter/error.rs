@@ -4,7 +4,8 @@ use std::error::Error;
 pub enum InterpreterErr {
     StackErr,
     MemErr,
-    InvalidInstr
+    InvalidInstr,
+    APIError(String),
 }
 
 impl std::fmt::Display for InterpreterErr {

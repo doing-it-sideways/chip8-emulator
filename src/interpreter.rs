@@ -4,25 +4,17 @@ use std::{
     time::Duration,
 };
 
-mod error;
+pub mod setup;
+pub mod error;
+
+pub mod graphics;
+pub mod input;
+
 mod instrs;
 mod font;
 
-mod graphics;
-mod input;
-
 use error::InterpreterErr;
-
-#[derive(clap::ValueEnum, Default, Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub enum InterpreterMode {
-    /// Original Chip-8 behavior on the COSMAC-VIP
-    COSMAC,
-    /// Behavior of the Chip-8 on the CHIP-48 / SUPER-CHIP
-    SUPERCHIP,
-    /// Same as SUPER-CHIP and enables instructions from the Octo extensions
-    #[default]
-    Octo,
-}
+use setup::InterpreterMode;
 
 #[derive(PartialEq, PartialOrd, Default, Copy, Clone)]
 struct Address(u16);
@@ -57,7 +49,7 @@ struct Registers {
 }
 
 #[derive(Default, Debug)]
-struct PixelBits([u64; 0x20]);
+pub struct PixelBits([u64; 0x20]);
 
 const ROM_START: usize = 0x200;
 const PC_INIT: u16 = ROM_START as u16;
@@ -93,18 +85,18 @@ pub enum ProgramStatus {
     Quit,
 }
 
-pub fn run(rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode) -> 
-    Result<ProgramStatus, Box<dyn Error>>
+ //rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode,
+pub fn run(settings: setup::Settings,
+           mut gctx: impl graphics::Graphics, mut ihandle: impl input::InputHandler)
+           -> Result<ProgramStatus, Box<dyn Error>>
 {
-    let mut chip8 = Chip8::new(rom_data, chip_behavior);
-    
-    let sdl_ctx = sdl3::init()?;
-    let mut event_pump = sdl_ctx.event_pump()?;
-    let mut gctx = graphics::GraphicsCtx::init(&sdl_ctx, window_scale)?;
+    let mut chip8 = Chip8::new(std::fs::read(settings.rom_path)?, 
+                               settings.chip_behavior);
 
-    'runloop: loop {        
+    'runloop: loop {
         for _ in 0..10 {
-            let input_res = input::update(&mut event_pump, &mut chip8.input);
+            let input_res = ihandle.handle(&mut chip8.input);
+            //let input_res = input::update(&mut event_pump, &mut chip8.input);
             if input_res == ProgramStatus::Quit {
                 break 'runloop;
             }
@@ -192,7 +184,7 @@ impl Chip8 {
 }
 
 impl PixelBits {
-    fn get(&self, x: u8, y: u8) -> u8 {
+    pub fn get(&self, x: u8, y: u8) -> u8 {
         let val = self.0[y as usize] >> (x % graphics::WIDTH as u8) as u64;
         (val & 1) as u8
     }

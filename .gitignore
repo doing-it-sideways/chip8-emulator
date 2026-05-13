@@ -4,3 +4,5 @@
 /roms
 Cargo.lock
 /bitset/target
+/wasm_build/target
+/desktop_build/target
