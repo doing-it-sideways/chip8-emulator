@@ -7,6 +7,8 @@ use clap::{
     ValueEnum,
 };
 
+use we_clap::WeParser;
+
 #[derive(ValueEnum, Default, Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum InterpreterMode {
     /// Original Chip-8 behavior on the COSMAC-VIP
@@ -18,7 +20,9 @@ pub enum InterpreterMode {
     Octo,
 }
 
-#[derive(Parser, Debug)]
+impl WeParser for Args {}
+
+#[derive(Parser, Debug, Default)]
 #[command(about, long_about = None)]
 struct Args {
     /// Path of Chip-8 program to run.
@@ -40,7 +44,7 @@ pub struct Settings {
 }
 
 pub fn setup() -> Settings {
-    let args = Args::parse();
+    let args: Args = Args::we_parse();
 
     println!("Path: {:?}\nScreen Scale: {}\nChip Behavior: {:?}",
              args.rom_path, args.window_scale, args.chip_behavior);
