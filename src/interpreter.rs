@@ -86,11 +86,11 @@ pub enum ProgramStatus {
 }
 
  //rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode,
-pub fn run(settings: setup::Settings,
+pub fn run(settings: &setup::Settings,
            mut gctx: impl graphics::Graphics, mut ihandle: impl input::InputHandler)
            -> Result<ProgramStatus, Box<dyn Error>>
 {
-    let mut chip8 = Chip8::new(std::fs::read(settings.rom_path)?, 
+    let mut chip8 = Chip8::new(std::fs::read(settings.rom_path.as_path())?, 
                                settings.chip_behavior);
 
     'runloop: loop {

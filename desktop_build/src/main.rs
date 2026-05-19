@@ -16,6 +16,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let ihandle = input::SDLInput::new(sdl_ctx.event_pump()?);
     
-    run(settings, gctx, ihandle).map(|_ok| ())
+    run(&settings, gctx, ihandle).map(|_ok| ())
 }
 
