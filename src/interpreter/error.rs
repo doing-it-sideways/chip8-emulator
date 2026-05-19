@@ -10,8 +10,9 @@ pub enum InterpreterErr {
 
 impl std::fmt::Display for InterpreterErr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use InterpreterErr::*;
         write!(f, "Chip-8 interpreter error: {}", match *self {
-            Self::InvalidInstr => "Invalid instruction",
+            InvalidInstr => "Invalid instruction",
             _ => "Unhandled error"
         })
     }
