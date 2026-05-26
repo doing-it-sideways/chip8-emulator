@@ -85,7 +85,6 @@ pub enum ProgramStatus {
     Quit,
 }
 
- //rom_data: Vec<u8>, window_scale: u8, chip_behavior: InterpreterMode,
 pub fn run(settings: &setup::Settings,
            mut gctx: impl graphics::Graphics, mut ihandle: impl input::InputHandler)
            -> Result<ProgramStatus, Box<dyn Error>>
@@ -94,41 +93,9 @@ pub fn run(settings: &setup::Settings,
                                settings.chip_behavior);
 
     'runloop: loop {
-        for _ in 0..10 {
-            let input_res = ihandle.handle(&mut chip8.input);
-            //let input_res = input::update(&mut event_pump, &mut chip8.input);
-            if input_res == ProgramStatus::Quit {
-                break 'runloop;
-            }
-
-            let instr = chip8.fetch();
-            let cur_instr = instrs::decode(instr)?;
-            println!("Cur instruction (0x{:04X}): {:?}", instr, cur_instr);
-
-            instrs::exec(&mut chip8, cur_instr)?;
-        }
-
-        if let Some((x, y, num)) = chip8.sprite_to_draw {
-            chip8.set_pixels(x, y, num);
-            chip8.reg.pc += 2;
-            chip8.sprite_to_draw = None;
-        }
-
-        if let Some(val) = chip8.timer_delay.checked_sub(1) {
-            chip8.timer_delay = val;
-        }
-
-        if chip8.timer_sound > 0 {
-            // cosmac only played sounds on values > 1
-            if chip8.chip_behavior >= InterpreterMode::SUPERCHIP || chip8.timer_sound > 1 {
-                // TODO: play sound
-            }
-            
-            chip8.timer_sound -= 1;
-        }
-
-        if let ProgramStatus::Quit = gctx.draw(&chip8.pixels)? {
-            break 'runloop;
+        match chip8.tick(&mut gctx, &mut ihandle)? {
+            ProgramStatus::Quit => break 'runloop,
+            _ => (),
         }
 
         std::thread::sleep(Duration::from_secs_f64(1.0 / 60.0));
@@ -158,6 +125,50 @@ impl Chip8 {
         chip8.ram[ROM_START..ROM_START + rom_data.len()].copy_from_slice(&rom_data);
         
         chip8
+    }
+
+    pub fn tick(&mut self,
+                gctx: &mut impl graphics::Graphics, ihandle: &mut impl input::InputHandler)
+                -> Result<ProgramStatus, Box<dyn Error>>
+    {
+        for _ in 0..10 {
+            let input_res = ihandle.handle(&mut self.input);
+            //let input_res = input::update(&mut event_pump, &mut chip8.input);
+            if input_res == ProgramStatus::Quit {
+                return Ok(ProgramStatus::Quit);
+            }
+
+            let instr = self.fetch();
+            let cur_instr = instrs::decode(instr)?;
+            println!("Cur instruction (0x{:04X}): {:?}", instr, cur_instr);
+
+            instrs::exec(self, cur_instr)?;
+        }
+
+        if let Some((x, y, num)) = self.sprite_to_draw {
+            self.set_pixels(x, y, num);
+            self.reg.pc += 2;
+            self.sprite_to_draw = None;
+        }
+
+        if let Some(val) = self.timer_delay.checked_sub(1) {
+            self.timer_delay = val;
+        }
+
+        if self.timer_sound > 0 {
+            // cosmac only played sounds on values > 1
+            if self.chip_behavior >= InterpreterMode::SUPERCHIP || self.timer_sound > 1 {
+                // TODO: play sound
+            }
+            
+            self.timer_sound -= 1;
+        }
+
+        if let ProgramStatus::Quit = gctx.draw(&self.pixels)? {
+            return Ok(ProgramStatus::Quit);
+        }
+
+        Ok(ProgramStatus::Ok)
     }
 
     fn fetch(&mut self) -> u16 {
