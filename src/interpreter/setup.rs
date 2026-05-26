@@ -55,3 +55,12 @@ pub fn setup() -> Settings {
         chip_behavior: args.chip_behavior,
     }
 }
+
+impl Settings {
+    pub fn with_rom(&self, rom_path: PathBuf) -> Self {
+        Self {
+            rom_path,
+            ..*self
+        }
+    }
+}
