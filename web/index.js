@@ -1,12 +1,12 @@
 // Most code taken from @aquova's tutorial on github.
-import init, * as wasm from "./wasm.js"
+import init, * as wasm from "./chip8_wasm.js"
 
 const WIDTH = 64
 const HEIGHT = 32
 const SCALE = 10
 let anim_frame = 0
 
-const canvas = document.getElementById("canvas");
+const canvas = document.getElementById("canvas")
 canvas.width = WIDTH * SCALE
 canvas.height = HEIGHT * SCALE
 
@@ -15,6 +15,41 @@ ctx.fillStyle = "black"
 ctx.fillRect(0, 0, WIDTH * SCALE, HEIGHT * SCALE)
 
 const input = document.getElementById("fileinput")
+
+function loadRom(chip8, file) {
+    if (anim_frame != 0) {
+        window.cancelAnimationFrame(anim_frame)
+    }
+
+    if (!file) {
+        alert("Failed to read file")
+        return
+    }
+
+    let fr = new FileReader()
+    fr.onload = function(ev) {
+        let buf = fr.result
+        const rom = new Uint8Array(buf)
+        chip8.reload("Octo", rom)
+    }
+
+    fr.readAsArrayBuffer(file)
+}
+
+function loadDemo(chip8) {
+    const req = new XMLHttpRequest()
+    req.open("GET", "./demo/cavern.ch8")
+    req.responseType = "arraybuffer"
+    req.onload = function() {
+        if (!(req.status === 200)) {
+            throw "Couldn't retrieve file: " + req.status
+        }
+    }
+    req.send()
+    
+    const demo = new Uint8Array(req.response)
+    chip8.reload("Octo", demo)
+}
 
 async function run() {
     await init()
@@ -32,27 +67,12 @@ async function run() {
 
     // change game rom
     input.addEventListener("change", function(e) {
-        if (anim_frame != 0) {
-            window.cancelAnimationFrame(anim_frame)
-        }
-
-        let file = e.target.files[0]
-        if (!file) {
-            alert("Failed to read file")
-            return
-        }
-
-        let fr = new FileReader()
-        fr.onload = function(ev) {
-            let buf = fr.result
-            const rom = new Uint8Array(buf)
-            chip8Binding = new wasm.Chip8Wasm()
-        }
-
-        fr.readAsArrayBuffer(file)
-
+        let file = event.target.files[0]
+        loadRom(chip8Binding, file)
     }, false)
 
+    
+    loadDemo(chip8Binding)
     chip8Binding.start(graphicsBinding, inputBinding)
 }
 
