@@ -7,6 +7,7 @@ edition = "2024"
 chip8 = { path = "../" }
 js-sys = "^0.3.95"
 wasm-bindgen = "^0.2.118"
+console_error_panic_hook = "0.1.7"
 
 [dependencies.web-sys]
 version = "^0.3.95"

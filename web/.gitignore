@@ -1,3 +1,4 @@
 *.wasm
-*.js
+chip8_wasm.js
+wasm.js
 *.ts
