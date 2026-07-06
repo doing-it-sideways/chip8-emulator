@@ -59,7 +59,7 @@ const STACK_DEFAULT_SIZE: usize = 0x100;
 
 #[derive(Default, Debug)]
 // 60 t/s
-struct Chip8 {
+pub struct Chip8 {
     ram: Vec<u8>,
     // normally, stack would grow down and be made of bytes,
     // but with vec we grow it up cause for chip-8 it doesn't matter cause stack is only for addresses
@@ -85,6 +85,7 @@ pub enum ProgramStatus {
     Quit,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn run(settings: &setup::Settings,
            mut gctx: impl graphics::Graphics, mut ihandle: impl input::InputHandler)
            -> Result<ProgramStatus, Box<dyn Error>>
@@ -106,25 +107,64 @@ pub fn run(settings: &setup::Settings,
 
 /// General functions
 impl Chip8 {
-    pub fn new(rom_data: Vec<u8>, chip_behavior: InterpreterMode) -> Self {
-        assert!(rom_data.len() <= RAM_DEFAULT_SIZE - ROM_START);
-
-        let mut chip8 = Chip8 {
+    fn init(chip_behavior: InterpreterMode) -> Self {
+        let mut chip8 = Self {
             ram: vec![0; RAM_DEFAULT_SIZE.into()],
             reg: Registers {
                 pc: PC_INIT,
                 ..Registers::default()
             },
             chip_behavior,
-            ..Chip8::default()
+            ..Self::default()
         };
 
         chip8.stack.reserve(STACK_DEFAULT_SIZE.into());
-
         chip8.ram[..font::FONT_BYTES].copy_from_slice(&font::get_bytes());
+
+        chip8
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn new(rom_data: Vec<u8>, chip_behavior: InterpreterMode) -> Self {
+        assert!(rom_data.len() <= RAM_DEFAULT_SIZE - ROM_START);
+
+        let mut chip8 = Chip8::init(chip_behavior);
+
         chip8.ram[ROM_START..ROM_START + rom_data.len()].copy_from_slice(&rom_data);
         
         chip8
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn new() -> Self {
+        Chip8::init(InterpreterMode::default())
+    }
+
+    pub fn reload(&mut self, mode: InterpreterMode, new_rom: Option<&[u8]>) {
+        unsafe { self.ram.as_mut_ptr().write_bytes(0u8, RAM_DEFAULT_SIZE); }
+        self.stack.clear();
+
+        self.pixels = PixelBits::default();
+
+        self.reg = Registers {
+            pc: PC_INIT,
+            ..Registers::default()
+        };
+        
+        self.sprite_to_draw = None;
+        self.input = 0;
+        self.cosmac_keypress = None;
+
+        self.timer_delay = 0;
+        self.timer_sound = 0;
+
+        self.chip_behavior = mode;
+
+        if let Some(rom_data) = new_rom {
+            self.ram[ROM_START..].fill(0);
+            assert!(rom_data.len() <= RAM_DEFAULT_SIZE - ROM_START);
+            self.ram[ROM_START..ROM_START + rom_data.len()].copy_from_slice(rom_data);
+        }
     }
 
     pub fn tick(&mut self,
@@ -133,7 +173,6 @@ impl Chip8 {
     {
         for _ in 0..10 {
             let input_res = ihandle.handle(&mut self.input);
-            //let input_res = input::update(&mut event_pump, &mut chip8.input);
             if input_res == ProgramStatus::Quit {
                 return Ok(ProgramStatus::Quit);
             }
