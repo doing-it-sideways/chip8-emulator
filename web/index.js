@@ -14,7 +14,8 @@ const ctx = canvas.getContext("2d")
 ctx.fillStyle = "black"
 ctx.fillRect(0, 0, WIDTH * SCALE, HEIGHT * SCALE)
 
-const input = document.getElementById("fileinput")
+const fileinput = document.getElementById("rominput")
+const interpreterMode = document.getElementById("mode selector")
 
 function loadRom(chip8, file) {
     if (anim_frame != 0) {
@@ -30,7 +31,8 @@ function loadRom(chip8, file) {
     fr.onload = function(ev) {
         let buf = fr.result
         const rom = new Uint8Array(buf)
-        chip8.reload("Octo", rom)
+
+        chip8.reload(interpreterMode.elements["mode"].value, rom)
     }
 
     fr.readAsArrayBuffer(file)
@@ -44,11 +46,14 @@ function loadDemo(chip8) {
         if (!(req.status === 200)) {
             throw "Couldn't retrieve file: " + req.status
         }
+        else {
+            console.log("demo file get: " + req.status)
+        }
     }
     req.send()
     
     const demo = new Uint8Array(req.response)
-    chip8.reload("Octo", demo)
+    chip8.reload(interpreterMode.elements["mode"].value, demo)
 }
 
 async function run() {
@@ -66,14 +71,14 @@ async function run() {
     })
 
     // change game rom
-    input.addEventListener("change", function(e) {
+    fileinput.addEventListener("change", function(e) {
         let file = event.target.files[0]
         loadRom(chip8Binding, file)
     }, false)
 
     
     loadDemo(chip8Binding)
-    chip8Binding.start(graphicsBinding, inputBinding)
+    //chip8Binding.start(graphicsBinding, inputBinding)
 }
 
 run().catch(console.error)
