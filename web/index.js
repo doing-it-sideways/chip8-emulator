@@ -18,10 +18,6 @@ const fileinput = document.getElementById("rominput")
 const interpreterMode = document.getElementById("mode selector")
 
 function loadRom(chip8, file) {
-    if (anim_frame != 0) {
-        window.cancelAnimationFrame(anim_frame)
-    }
-
     if (!file) {
         alert("Failed to read file")
         return
@@ -76,8 +72,13 @@ async function run() {
 
     // change game rom
     fileinput.addEventListener("change", function(e) {
+        if (anim_frame != 0) {
+            window.cancelAnimationFrame(anim_frame)
+        }
+
         let file = event.target.files[0]
         loadRom(chip8Binding, file)
+        interpreterLoop(chip8Binding, graphicsBinding, inputBinding)
     }, false)
 
     
