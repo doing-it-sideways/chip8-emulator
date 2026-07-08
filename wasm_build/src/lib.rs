@@ -49,8 +49,6 @@ impl Chip8Wasm {
                 Err(jserr) => return Err(JsError::new(&jserr.to_string())),
                 _ => (),
             }
-
-            //std::thread::sleep(std::time::Duration::from_secs_f64(1.0 / 60.0));
         }
 
         Ok(())

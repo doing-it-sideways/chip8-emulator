@@ -77,11 +77,13 @@ pub struct Chip8 {
     timer_sound: u8,
 
     chip_behavior: InterpreterMode,
+    is_halted: bool,
 }
 
 #[derive(PartialEq)]
 pub enum ProgramStatus {
     Ok,
+    Halt,
     Quit,
 }
 
@@ -172,16 +174,21 @@ impl Chip8 {
                 -> Result<ProgramStatus, Box<dyn Error>>
     {
         for _ in 0..10 {
+            if self.is_halted {
+                return Ok(ProgramStatus::Halt);
+            }
+            
             let input_res = ihandle.handle(&mut self.input);
             if input_res == ProgramStatus::Quit {
                 return Ok(ProgramStatus::Quit);
             }
 
-            let instr = self.fetch();
-            let cur_instr = instrs::decode(instr)?;
-            println!("Cur instruction (0x{:04X}): {:?}", instr, cur_instr);
+            if let Some(instr) = self.fetch() {
+                let cur_instr = instrs::decode(instr)?;
+                println!("Cur instruction (0x{:04X}): {:?}", instr, cur_instr);
 
-            instrs::exec(self, cur_instr)?;
+                instrs::exec(self, cur_instr)?;
+            }
         }
 
         if let Some((x, y, num)) = self.sprite_to_draw {
@@ -210,13 +217,20 @@ impl Chip8 {
         Ok(ProgramStatus::Ok)
     }
 
-    fn fetch(&mut self) -> u16 {
+    fn fetch(&mut self) -> Option<u16> {
         let pc = &mut self.reg.pc;
-        let hi = self.ram[*pc as usize];
-        let lo = self.ram[(*pc + 1) as usize];
+
+        let hi = self.ram.get(*pc as usize);
+        let lo = self.ram.get((*pc + 1) as usize);
         *pc += 2;
 
-        ((hi as u16) << 8) | lo as u16
+        if let Some(hi) = hi && let Some(lo) = lo {
+            Some(((*hi as u16) << 8) | *lo as u16)
+        }
+        else {
+            self.is_halted = true;
+            None
+        }
     }
 
     fn push_addr(&mut self, addr: Address) {
