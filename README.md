@@ -30,8 +30,8 @@ Web:
     - Go into the `web` folder.
     - Start a web server, easiest with python by spinning up an http server with python.
         - Different terminals/if you're doing this inside of python itself will have slightly different commands, check the API for `http.server`
-2. From GitHub:
-    - TODO
+2. From GitHub/Browser:
+    - Go to the [github pages website](https://doing-it-sideways.github.io/chip8-emulator/)
 
 ## Special Thanks
 @aquova for providing a great tutorial which I referenced at certain points as a sort of outline guide for the project, especially when starting the web development portion.
