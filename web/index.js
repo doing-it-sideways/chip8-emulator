@@ -38,22 +38,26 @@ function loadRom(chip8, file) {
     fr.readAsArrayBuffer(file)
 }
 
-function loadDemo(chip8) {
-    const req = new XMLHttpRequest()
-    req.open("GET", "./demo/cavern.ch8")
-    req.responseType = "arraybuffer"
-    req.onload = function() {
-        if (!(req.status === 200)) {
-            throw "Couldn't retrieve file: " + req.status
-        }
-        else {
-            console.log("demo file get: " + req.status)
-        }
-    }
-    req.send()
-    
-    const demo = new Uint8Array(req.response)
-    chip8.reload(interpreterMode.elements["mode"].value, demo)
+async function loadDemo(chip8) {
+    const req = await fetch("./demo/cavern.ch8")
+        .then((req) => {
+            if (!req.ok) {
+                throw "Couldn't retrieve file: " + req.status
+            }
+            return req.arrayBuffer()
+        })
+        .then((buf) => {
+            const demo = new Uint8Array(buf)
+            chip8.reload(interpreterMode.elements["mode"].value, demo)
+        })
+}
+
+function interpreterLoop(chip8, gfx, input) {
+    chip8.tick(gfx, input)
+
+    anim_frame = window.requestAnimationFrame(() => {
+        interpreterLoop(chip8, gfx, input)
+    })
 }
 
 async function run() {
@@ -77,8 +81,8 @@ async function run() {
     }, false)
 
     
-    loadDemo(chip8Binding)
-    //chip8Binding.start(graphicsBinding, inputBinding)
+    await loadDemo(chip8Binding)
+    interpreterLoop(chip8Binding, graphicsBinding, inputBinding)
 }
 
 run().catch(console.error)
