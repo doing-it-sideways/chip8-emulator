@@ -60,8 +60,8 @@ impl Graphics for JSGraphicsCtx {
             for x in 0..WIDTH as u8 {
                 if pixels.get(x, y) != 0 {
                     self.gctx.fill_rect(
-                        (x * self.scale) as f64,
-                        (y * self.scale) as f64,
+                        x as f64 * self.scale as f64,
+                        y as f64 * self.scale as f64,
                         self.scale as f64,
                         self.scale as f64
                     );
