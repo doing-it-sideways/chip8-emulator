@@ -14,8 +14,9 @@ mod input;
 
 #[wasm_bindgen]
 pub struct Chip8Wasm {
-    settings: setup::Settings,
+    settings: setup::Settings, // TODO: remove
     interpreter: Chip8,
+    quit: bool
 }
 
 #[wasm_bindgen]
@@ -24,8 +25,9 @@ impl Chip8Wasm {
     pub fn new() -> Self {
         console_error_panic_hook::set_once();
         Self {
-            settings: setup::setup(),
+            settings: setup::setup(), // TODO: remove
             interpreter: Chip8::new(),
+            quit: false
         }
     }
 
@@ -42,20 +44,22 @@ impl Chip8Wasm {
     }
 
     #[wasm_bindgen]
-    pub fn start(&mut self, mut gctx: graphics::JSGraphicsCtx, mut ihandle: input::JSInput) -> Result<(), JsError> {
-        'runloop: loop {
-            match self.interpreter.tick(&mut gctx, &mut ihandle) {
-                Ok(ProgramStatus::Quit) => break 'runloop,
-                Err(jserr) => return Err(JsError::new(&jserr.to_string())),
-                _ => (),
-            }
+    pub fn tick(&mut self,
+                gctx: &mut graphics::JSGraphicsCtx, ihandle: &mut input::JSInput)
+                -> Result<(), JsError>
+    {
+        // idk if this can even get set from the web from anything besides a halt.
+        // will i test it? nope.
+        if self.quit {
+            return Ok(())
+        }
+
+        match self.interpreter.tick(gctx, ihandle) {
+            Ok(ProgramStatus::Quit) => self.quit = true,
+            Err(jserr) => return Err(JsError::new(&jserr.to_string())),
+            _ => (),
         }
 
         Ok(())
-    }
-
-    #[wasm_bindgen]
-    pub fn tick(&mut self) {
-        todo!()
     }
 }
