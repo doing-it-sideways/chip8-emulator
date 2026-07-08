@@ -1,8 +1,10 @@
 use std::{
     error::Error,
     fmt,
-    time::Duration,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Duration;
 
 pub mod setup;
 pub mod error;
