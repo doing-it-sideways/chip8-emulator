@@ -33,5 +33,13 @@ Web:
 2. From GitHub/Browser:
     - Go to the [github pages website](https://doing-it-sideways.github.io/chip8-emulator/)
 
+
+### Input
+Keypad is emulated, such that 4 rows of keys are used for button presses, shown: {Keyboard Mapping} | {Chip-8 Keypad Mapping})
+1 | 1    2 | 2    3 | 3    4 | C
+Q | 4    W | 5    E | 6    R | D
+A | 7    S | 8    D | 9    F | E
+Z | A    X | 0    C | B    V | F
+
 ## Special Thanks
 @aquova for providing a great tutorial which I referenced at certain points as a sort of outline guide for the project, especially when starting the web development portion.
