@@ -20,12 +20,14 @@ use chip8::interpreter::{
 pub struct JSGraphicsCtx {
     gctx: CanvasRenderingContext2d,
     scale: u8,
+    color_fg: String,
+    color_bg: String,
 }
 
 #[wasm_bindgen]
 impl JSGraphicsCtx {
     #[wasm_bindgen(constructor)]
-    pub fn new(scale: u8) -> Result<Self, JsError> {
+    pub fn new(scale: u8, color_fg: Option<String>, color_bg: Option<String>) -> Result<Self, JsError> {
         let doc = web_sys::window().ok_or_else(|| JsError::new("Invalid window"))?
                         .document().ok_or_else(|| JsError::new("Invalid doc"))?;
         
@@ -36,15 +38,24 @@ impl JSGraphicsCtx {
                         .ok_or_else(|| JsError::new("No 2d ctx"))?
                         .dyn_into::<CanvasRenderingContext2d>().map_err(|_| JsError::new("Invalid 2d ctx"))?;
 
+        let color_fg = color_fg.unwrap_or(String::from("white"));
+        let color_bg = color_bg.unwrap_or(String::from("black"));
+        
         Ok(Self {
             gctx,
             scale,
+            color_fg,
+            color_bg,
         })
     }
 }
 
 impl Graphics for JSGraphicsCtx {
     fn draw(&mut self, pixels: &PixelBits) -> Result<ProgramStatus, Box<dyn Error>> {
+        self.gctx.set_fill_style_str(&self.color_bg);
+        self.gctx.fill_rect(0.0, 0.0, WIDTH as f64 * self.scale as f64, HEIGHT as f64 * self.scale as f64);
+        self.gctx.set_fill_style_str(&self.color_fg);
+
         for y in 0..HEIGHT as u8 {
             for x in 0..WIDTH as u8 {
                 if pixels.get(x, y) != 0 {
